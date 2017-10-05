@@ -1,22 +1,31 @@
 {
   "name": "pos-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "backend posmart",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pablocordova/posmart-backend.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node app.js"
   },
   "author": "",
-  "license": "ISC",
   "dependencies": {
+    "bcrypt": "1.0.3",
+    "bluebird": "3.5.1",
     "body-parser": "1.18.2",
+    "chai-http": "3.0.0",
     "express": "4.16.1",
     "helmet": "3.8.2",
     "mongoose": "4.12.0",
     "passport": "0.4.0"
   },
   "devDependencies": {
-    "eslint": "4.8.0"
+    "chai": "^4.1.2",
+    "eslint": "^4.8.0",
+    "mocha": "^4.0.0",
+    "sinon": "^4.0.1"
   }
 }
