@@ -5,16 +5,15 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 
 var user_schema = new mongoose.Schema({
-  firstname: { type: String },
-  lastname: { type: String },
-  username: { type: String },
-  password: { type: String }
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  type: { type: String, required: true }
 });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen
 user_schema.pre('save', function(next) {
   let user = this;
-  console.log(user);
   bcrypt.hash(user.password, saltRounds, (err, hash) => {
     if (err) return next();
     user.password = hash;
