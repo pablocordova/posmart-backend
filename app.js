@@ -1,14 +1,15 @@
 // Get dependencies
-var bluebird = require('bluebird');
-var bodyParser = require('body-parser');
-var express = require('express');
-var helmet = require('helmet');
-var http = require('http');
-var mongoose = require('mongoose');
-var passport = require('passport');
+require('dotenv').config();
+const bluebird = require('bluebird');
+const bodyParser = require('body-parser');
+const express = require('express');
+const helmet = require('helmet');
+const http = require('http');
+const mongoose = require('mongoose');
+const passport = require('passport');
 
 // Get our API routes
-var users = require('./routes/users');
+const users = require('./routes/users');
 
 var app = express();
 
@@ -31,11 +32,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Config bluebird as Promise, is faster
 mongoose.Promise = bluebird;
 mongoose.connect(process.env.MONGO_PATH, { useMongoClient: true }, err => {
-  if (err) {
-    console.log('Error connecting to Mongo: ', err);
-  } else {
-    console.log('Success connection to Mongo!');
-  }
+  if (!err) console.log('Success connection to Mongo!');
 });
 
 /**

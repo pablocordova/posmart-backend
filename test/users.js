@@ -1,12 +1,12 @@
-var chai = require('chai');
-var chaiHttp = require('chai-http');
-var app = require('../app');
-var expect = chai.expect;
+const chai = require('chai');
+const chaiHttp = require('chai-http');
+const app = require('../app');
+const expect = chai.expect;
 
 chai.use(chaiHttp);
 
-describe('Users endpoints', function() {
-  it('should create new user', function(done) {
+describe('Users endpoints', () => {
+  it('should create new user', done => {
     chai.request(app)
       .post('/users')
       .type('form')
@@ -16,7 +16,7 @@ describe('Users endpoints', function() {
         'username': 'usernameTester',
         'password': '123456'
       })
-      .end(function(err, res) {
+      .end((err, res) => {
         expect(res).to.have.status(200);
         expect(res).to.be.json;
         expect(res.body.message).to.equal('User created');

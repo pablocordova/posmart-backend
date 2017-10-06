@@ -11,7 +11,7 @@ WORKDIR /usr/src/app
 COPY package.json /usr/src/app
 
 # Install dependencies
-RUN npm install
+RUN npm install --production
 
 # Get all the code needed to run the app
 COPY . /usr/src/app
@@ -19,10 +19,5 @@ COPY . /usr/src/app
 # Expose the port the app runs in
 EXPOSE 3000
 
-# Environment variables
-RUN export MONGO_PATH='mongo://localhost:pos'
-RUN export SERVER_PORT=3000
-# RUN export NODE_ENV=production
-
 # Serve the app
-#CMD ["npm", "start"]
+CMD ["npm", "start"]

@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 // Cost of processing the data in bcrypt - salt
@@ -12,15 +12,16 @@ var user_schema = new mongoose.Schema({
 });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen
-user_schema.pre('save', function(next){
+user_schema.pre('save', function(next) {
   let user = this;
-  bcrypt.hash(user.password, saltRounds, function(err, hash) {
+  console.log(user);
+  bcrypt.hash(user.password, saltRounds, (err, hash) => {
     if (err) return next();
     user.password = hash;
     next();
   });
 });
 
-var user = mongoose.model('User', user_schema);
+const user = mongoose.model('User', user_schema);
 
 module.exports = user;
