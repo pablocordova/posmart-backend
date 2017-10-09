@@ -7,6 +7,39 @@ const helmet = require('helmet');
 const http = require('http');
 const mongoose = require('mongoose');
 const passport = require('passport');
+const passportJWT = require('passport-jwt');
+const User = require('./models/user');
+
+// Get our API routes
+const login = require('./routes/login');
+const products = require('./routes/products');
+const users = require('./routes/users');
+
+// Strategy for authentification
+var ExtractJwt = passportJWT.ExtractJwt;
+var JwtStrategy = passportJWT.Strategy;
+//JWT Config
+var jwtOptions = {};
+jwtOptions.jwtFromRequest = ExtractJwt.fromAuthHeaderWithScheme('jwt');
+jwtOptions.secretOrKey = process.env.JWT_KEY;
+
+// Here, passport is defining as a middleware
+var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
+
+  User.findById(jwt_payload.id, function(err, user) {
+
+    if (err) return next(err, false);
+
+    if (user) {
+      return next(null, user);
+    } else {
+      return next(null, false);
+    }
+  });
+
+});
+
+passport.use(strategy);
 
 var app = express();
 
@@ -16,11 +49,6 @@ var app = express();
 
 // To use helmet
 app.use(helmet());
-
-// To use passport, TODO research about use passport
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Parsers for POST data
 app.use(bodyParser.json());
@@ -37,12 +65,9 @@ mongoose.connect(process.env.MONGO_PATH, { useMongoClient: true }, err => {
  * ROUTES
  */
 
-// Get our API routes
-const users = require('./routes/users');
-const login = require('./routes/login');
-
-app.use('/users', users);
 app.use('/login', login);
+app.use('/products', products);
+app.use('/users', users);
 
 /**
  * INTIALIZE SERVER

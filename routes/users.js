@@ -22,10 +22,10 @@ router.post('/', (req, res) => {
   } else {
     user.save()
       .then(() => {
-        res.status(config.STATUS.CREATED).send({ message: config.RES.CREATED });
+        return res.status(config.STATUS.CREATED).send({ message: config.RES.CREATED });
       })
       .catch(() => {
-        res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.NOCREATED });
+        return res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.NOCREATED });
       });
   }
 });

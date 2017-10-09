@@ -1,49 +1,53 @@
 const bcrypt = require('bcrypt');
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const localStrategy = require('passport-local').Strategy;
-const passport = require('passport');
 const router = express.Router();
 
-const secret = 'mykeysecret';
+const secretKey = process.env.JWT_KEY;
 const User = require('../models/user');
 
-passport.use(new localStrategy({ usernameField: 'email' }, function(email, password, done) {
+router.post('/', function (req, res) {
 
-  User.findOne( { email: email }, (err, user) => {
-
-    if (err) throw err;
-    if (!user) return done(null, false);
-
-    bcrypt.compare(password, user.password, (err, isMatch) => {
-      if (err) throw err;
-      if (!isMatch) return done(null, false);
-      return done(null, user);
+  if (!req.body.email || !req.body.password) {
+    return res.status(401).send({
+      message: 'Incorrect credentials'
     });
+  }
+
+  User.findOne({ email: req.body.email }, function (err, user) {
+
+    if (!user) {
+      return res.status(401).send({
+        message: 'Incorrect credentials'
+      });
+    }
+
+    if (user) {
+      bcrypt.compare(req.body.password, user.password, (err, isMatch) => {
+
+        if (!isMatch) {
+          return res.status(401).send({
+            message: 'Incorrect credentials'
+          });
+        }
+
+        if (isMatch) {
+          var payload = {id: user._id};
+          var token = jwt.sign(payload, secretKey);
+
+          user.password = undefined;
+          res.status(200).send({
+            token: token,
+            username: user.username,
+            email: user.email,
+            type: user.type,
+            _id: user._id
+          });
+        }
+      });
+    }
   });
-}));
 
-// Methods necessary for passport middleware
-
-passport.serializeUser(function(user, done) {
-  done(null, user.id);
-});
-
-passport.deserializeUser(function(id, done) {
-  User.findById(id, function(err, user) {
-    done(err, user);
-  });
-});
-
-router.post('/', passport.authenticate('local'), (req, res) => {
-  const payload = { id:  req.user._id };
-  const token = jwt.sign(payload, secret);
-  return res.status(200).send({
-    token: token,
-    username: req.user.username,
-    email: req.user.email,
-    type: req.user.type
-  });
 });
 
 module.exports = router;

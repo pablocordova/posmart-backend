@@ -3,12 +3,12 @@ var config = new Object();
 // Validation
 config.USERNAME = {
   min: 2,
-  max: 50 
+  max: 50
 };
 
 config.PASSWORD = {
   min: 8,
-  max: 50 
+  max: 50
 };
 
 config.PASSWORD_LOCAL = 'es-ES';
@@ -24,9 +24,9 @@ config.STATUS = {
 
 // Messages response
 config.RES = {
+  OK: 'OK',
   CREATED: 'User created',
   NOCREATED: 'Error to create user'
-  
 };
 
 module.exports = config;

@@ -1,7 +1,9 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const config = require('../config/users.js');
+
 const app = require('../app');
+const config = require('../config/users');
+
 const expect = chai.expect;
 
 chai.use(chaiHttp);
@@ -188,7 +190,7 @@ describe('Fail Log in', () => {
         'password': '12K45p78'
       })
       .end((err, res) => {
-        expect(res).to.be.status(400);
+        expect(res).to.be.status(401);
         done();
       });
   });
@@ -202,7 +204,7 @@ describe('Fail Log in', () => {
         'password': ''
       })
       .end((err, res) => {
-        expect(res).to.be.status(400);
+        expect(res).to.be.status(401);
         done();
       });
   });
