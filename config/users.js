@@ -16,13 +16,17 @@ config.PASSWORD_LOCAL = 'es-ES';
 // Status response
 config.STATUS = {
   OK: 200,
-  ERROR: 503
+  CREATED: 201,
+  BAD_REQ: 400,
+  UNAUTHORIZED: 401,
+  SERVER_ERROR: 500
 };
 
 // Messages response
 config.RES = {
   CREATED: 'User created',
   NOCREATED: 'Error to create user'
+  
 };
 
 module.exports = config;

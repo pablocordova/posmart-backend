@@ -8,19 +8,17 @@ const http = require('http');
 const mongoose = require('mongoose');
 const passport = require('passport');
 
-// Get our API routes
-const users = require('./routes/users');
-
 var app = express();
 
 /**
  * INITIAL CONFIGURATIONS
  */
 
-// To use helmet, TODO: research more about this
+// To use helmet
 app.use(helmet());
 
-// To use passport
+// To use passport, TODO research about use passport
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -39,7 +37,12 @@ mongoose.connect(process.env.MONGO_PATH, { useMongoClient: true }, err => {
  * ROUTES
  */
 
+// Get our API routes
+const users = require('./routes/users');
+const login = require('./routes/login');
+
 app.use('/users', users);
+app.use('/login', login);
 
 /**
  * INTIALIZE SERVER

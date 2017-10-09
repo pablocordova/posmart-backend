@@ -8,6 +8,7 @@ chai.use(chaiHttp);
 
 describe('Create new users', () => {
 
+  // Database need to be clean because usename and email are uniques
   it('should create with normal type', done => {
     chai.request(app)
       .post('/users')
@@ -19,11 +20,9 @@ describe('Create new users', () => {
         'type': 'normal'
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(201);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.OK);
         expect(res.body.message).to.be.equal(config.RES.CREATED);
-        expect(res.body.result.type).to.be.equal('normal');
         done();
       });
   });
@@ -42,9 +41,8 @@ describe('Fail creating new users', () => {
         'type': 'normal'
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(400);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.ERROR);
         expect(res.body.message).to.be.equal(config.RES.NOCREATED);
         done();
       });
@@ -61,9 +59,8 @@ describe('Fail creating new users', () => {
         'type': ''
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(400);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.ERROR);
         expect(res.body.message).to.be.equal(config.RES.NOCREATED);
         done();
       });
@@ -80,9 +77,8 @@ describe('Fail creating new users', () => {
         'type': 'normal'
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(400);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.ERROR);
         expect(res.body.message).to.be.equal(config.RES.NOCREATED);
         done();
       });
@@ -99,9 +95,8 @@ describe('Fail creating new users', () => {
         'type': 'normal'
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(500);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.ERROR);
         expect(res.body.message).to.be.equal(config.RES.NOCREATED);
         done();
       });
@@ -118,9 +113,8 @@ describe('Fail creating new users', () => {
         'type': 'normal'
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(500);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.ERROR);
         expect(res.body.message).to.be.equal(config.RES.NOCREATED);
         done();
       });
@@ -137,9 +131,8 @@ describe('Fail creating new users', () => {
         'type': 'normal'
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(400);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.ERROR);
         expect(res.body.message).to.be.equal(config.RES.NOCREATED);
         done();
       });
@@ -156,12 +149,75 @@ describe('Fail creating new users', () => {
         'type': 'normal'
       })
       .end((err, res) => {
-        expect(res).to.have.status(200);
+        expect(res).to.have.status(400);
         expect(res).to.be.json;
-        expect(res.body.status).to.be.equal(config.STATUS.ERROR);
         expect(res.body.message).to.be.equal(config.RES.NOCREATED);
         done();
       });
   });
 
+});
+
+// To log in, the test is described here because here is created an account
+describe('Log in', () => {
+
+  it('should log in the platform', done => {
+    chai.request(app)
+      .post('/login')
+      .type('form')
+      .send({
+        'email': 'email1@email.com',
+        'password': '12K45p78'
+      })
+      .end((err, res) => {
+        expect(res).to.be.status(200);
+        expect(res).to.be.json;
+        expect(res.body).to.have.property('token');
+        done();
+      });
+  });
+});
+
+describe('Fail Log in', () => {
+
+  it('should Fail log in due lack some parameters', done => {
+    chai.request(app)
+      .post('/login')
+      .type('form')
+      .send({
+        'password': '12K45p78'
+      })
+      .end((err, res) => {
+        expect(res).to.be.status(400);
+        done();
+      });
+  });
+
+  it('should Fail log in due empty parameters', done => {
+    chai.request(app)
+      .post('/login')
+      .type('form')
+      .send({
+        'email': '',
+        'password': ''
+      })
+      .end((err, res) => {
+        expect(res).to.be.status(400);
+        done();
+      });
+  });
+
+  it('should Fail log in due incorrect credentials', done => {
+    chai.request(app)
+      .post('/login')
+      .type('form')
+      .send({
+        'email': 'email1@email.come',
+        'password': '12K45p78'
+      })
+      .end((err, res) => {
+        expect(res).to.be.status(401);
+        done();
+      });
+  });
 });

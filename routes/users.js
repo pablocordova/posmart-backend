@@ -1,4 +1,4 @@
-const config = require('../config/users.js');
+const config = require('../config/users');
 const express = require('express');
 const validator = require('validator');
 
@@ -18,14 +18,14 @@ router.post('/', (req, res) => {
   const isAlphanumericPass = validator.isAlphanumeric(user.password + '', config.PASSWORD_LOCAL);
 
   if (!isEmail || !isLengthUser || !isLengthPass || !isAlphanumericPass) {
-    res.send({ status: config.STATUS.ERROR, message: config.RES.NOCREATED });
+    res.status(config.STATUS.BAD_REQ).send({ message: config.RES.NOCREATED });
   } else {
     user.save()
-      .then(doc => {
-        res.send({ status: config.STATUS.OK, message: config.RES.CREATED, result: doc });
+      .then(() => {
+        res.status(config.STATUS.CREATED).send({ message: config.RES.CREATED });
       })
-      .catch(err => {
-        res.send({ status: config.STATUS.ERROR, message: config.RES.NOCREATED, result: err });
+      .catch(() => {
+        res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.NOCREATED });
       });
   }
 });
