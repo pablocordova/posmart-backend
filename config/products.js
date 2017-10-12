@@ -3,10 +3,12 @@ var config = new Object();
 config.RES = {
   OK: 'OK',
   CREATED: 'Product created successfully',
-  NOCREATED: 'Error to create user'
+  NOCREATED: 'Error to create user',
+  ERROR: 'Error in DB'
 };
 
 config.STATUS = {
+  OK: 200,
   CREATED: 201,
   SERVER_ERROR: 500
 };

@@ -27,9 +27,37 @@ router.post('/', passport.authenticate('jwt', { session: false }), (req, res) =>
 });
 
 router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => {
-  return res.status(200).send({
-    message: 'OK'
-  });
+
+  Product.find({})
+    .then(products => {
+      res.status(config.STATUS.OK).send({
+        result: products,
+        message: config.RES.OK,
+      });
+    })
+    .catch(() => {
+      res.status(config.STATUS.SERVER_ERROR).send({
+        message: config.RES.ERROR,
+      });
+    });
+
+});
+
+router.get('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+
+  Product.findById(req.params.id)
+    .then(product => {
+      res.status(config.STATUS.OK).send({
+        result: product,
+        message: config.RES.OK,
+      });
+    })
+    .catch(() => {
+      res.status(config.STATUS.SERVER_ERROR).send({
+        message: config.RES.ERROR,
+      });
+    });
+
 });
 
 module.exports = router;

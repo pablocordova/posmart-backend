@@ -81,3 +81,59 @@ describe('Create product', () => {
   });
 
 });
+
+describe('Get products', () => {
+
+  it('should get all and one product', done => {
+    chai.request(app)
+      .post('/login')
+      .type('form')
+      .send(loginUser)
+      .end((err, resL) => {
+        chai.request(app)
+          .get('/products')
+          .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+          .end((err, resP) => {
+            chai.request(app)
+              .get('/products/' + resP.body.result[0]._id)
+              .set({ 'Authorization': 'JWT ' + resL.body.token,
+                'Content-Type': 'application/json' })
+              .end((err, res) => {
+                expect(res).to.have.status(200);
+                expect(res.body.result.name).to.exist;
+                done();
+              });
+          });
+      });
+  });
+
+  it('should fail trying to get all products, because not authorization', done => {
+    chai.request(app)
+      .get('/products')
+      .end((err, res) => {
+        expect(res).to.have.status(401);
+        done();
+      });
+  });
+
+  it('should fail trying to get one product, because not authorization', done => {
+    chai.request(app)
+      .post('/login')
+      .type('form')
+      .send(loginUser)
+      .end((err, resL) => {
+        chai.request(app)
+          .get('/products')
+          .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+          .end((err, resP) => {
+            chai.request(app)
+              .get('/products/' + resP.body.result[0]._id)
+              .end((err, res) => {
+                expect(res).to.have.status(401);
+                done();
+              });
+          });
+      });
+  });
+
+});

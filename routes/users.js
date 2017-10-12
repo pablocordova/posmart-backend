@@ -18,7 +18,7 @@ router.post('/', (req, res) => {
   const isAlphanumericPass = validator.isAlphanumeric(user.password + '', config.PASSWORD_LOCAL);
 
   if (!isEmail || !isLengthUser || !isLengthPass || !isAlphanumericPass) {
-    res.status(config.STATUS.BAD_REQ).send({ message: config.RES.NOCREATED });
+    return res.status(config.STATUS.BAD_REQ).send({ message: config.RES.NOCREATED });
   } else {
     user.save()
       .then(() => {

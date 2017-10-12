@@ -78,7 +78,6 @@ mongoose.connect(MONGO_PATH, { useMongoClient: true }, err => {
   if (!err) console.log('Success connection to Mongo!');
 });
 
-
 /**
  * ROUTES
  */
