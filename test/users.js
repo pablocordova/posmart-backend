@@ -3,6 +3,7 @@ const chaiHttp = require('chai-http');
 
 const app = require('../app');
 const config = require('../config/users');
+const User = require('../models/user');
 
 const expect = chai.expect;
 
@@ -10,7 +11,13 @@ chai.use(chaiHttp);
 
 describe('Create new users', () => {
 
-  // Database need to be clean because usename and email are uniques
+  // Clear User collections
+  before(done => {
+    User.remove({}, () => {
+      done();
+    });
+  });
+
   it('should create with normal type', done => {
     chai.request(app)
       .post('/users')

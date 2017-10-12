@@ -57,9 +57,27 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Connect to db
 // Config bluebird as Promise, is faster
 mongoose.Promise = bluebird;
-mongoose.connect(process.env.MONGO_PATH, { useMongoClient: true }, err => {
+
+// By defaul mongo path for production
+let MONGO_PATH = '';
+
+switch (process.env.NODE_ENV) {
+
+  case 'production':
+    MONGO_PATH = process.env.MONGO_PATH;
+    break;
+  case 'development':
+    MONGO_PATH = process.env.MONGO_PATH_DEV;
+    break;
+  case 'test':
+    MONGO_PATH = process.env.MONGO_PATH_TEST;
+    break;
+}
+
+mongoose.connect(MONGO_PATH, { useMongoClient: true }, err => {
   if (!err) console.log('Success connection to Mongo!');
 });
+
 
 /**
  * ROUTES
