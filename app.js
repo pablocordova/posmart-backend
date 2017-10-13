@@ -75,7 +75,10 @@ switch (process.env.NODE_ENV) {
 }
 
 mongoose.connect(MONGO_PATH, { useMongoClient: true }, err => {
-  if (!err) console.log('Success connection to Mongo!');
+  // No console log for test environment, to log better presentation
+  if (process.env.NODE_ENV !== 'test') {
+    if (!err) console.log('Success connection to Mongo!');
+  }
 });
 
 /**
