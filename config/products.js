@@ -1,15 +1,16 @@
 var config = new Object();
 
 config.RES = {
-  OK: 'OK',
-  CREATED: 'Product created successfully',
-  NOCREATED: 'Error to create user',
-  ERROR: 'Error in DB'
+  CREATED: 'Created successfully',
+  ERROR: 'Error processing data',
+  NOCREATED: 'Error trying to create item',
+  OK: 'OK'
 };
 
 config.STATUS = {
-  OK: 200,
   CREATED: 201,
+  UNAUTHORIZED: 401,
+  OK: 200,
   SERVER_ERROR: 500
 };
 

@@ -38,7 +38,7 @@ describe('PRODUCT', () => {
               picture: base64Pic,
             })
             .end((err, res) => {
-              expect(res).to.have.status(201);
+              expect(res).to.have.status(config.STATUS.CREATED);
               expect(res.body.message).to.be.equal(config.RES.CREATED);
               done();
             });
@@ -55,7 +55,7 @@ describe('PRODUCT', () => {
           picture: base64Pic,
         })
         .end((err, res) => {
-          expect(res).to.have.status(401);
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
           done();
         });
     });
@@ -76,7 +76,7 @@ describe('PRODUCT', () => {
               picture: base64Pic,
             })
             .end((err, res) => {
-              expect(res).to.have.status(500);
+              expect(res).to.have.status(config.STATUS.SERVER_ERROR);
               done();
             });
         });
@@ -101,7 +101,7 @@ describe('PRODUCT', () => {
                 .set({ 'Authorization': 'JWT ' + resL.body.token,
                   'Content-Type': 'application/json' })
                 .end((err, res) => {
-                  expect(res).to.have.status(200);
+                  expect(res).to.have.status(config.STATUS.OK);
                   expect(res.body.result.name).to.exist;
                   done();
                 });
@@ -113,7 +113,7 @@ describe('PRODUCT', () => {
       chai.request(app)
         .get('/products')
         .end((err, res) => {
-          expect(res).to.have.status(401);
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
           done();
         });
     });
@@ -131,11 +131,493 @@ describe('PRODUCT', () => {
               chai.request(app)
                 .get('/products/' + resP.body.result[0]._id)
                 .end((err, res) => {
-                  expect(res).to.have.status(401);
+                  expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
                   done();
                 });
             });
         });
+    });
+
+  });
+
+  describe('Create price product', () => {
+
+    it('should create one price product', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/price')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: '1',
+                  name: 'unidad',
+                  items: 1,
+                  price: 5.8,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.CREATED);
+                  expect(res.body.message).to.be.equal(config.RES.CREATED);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating one price product, because not authorization', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/price')
+                .type('form')
+                .send({
+                  quantity: '1',
+                  name: 'unidad',
+                  items: 1,
+                  price: 5.8,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.UNAUTHORIZED);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating one price product, because lack some parameter', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/price')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: '1',
+                  name: 'docena',
+                  price: 5.8,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+                  expect(res.body.message).to.be.equal(config.RES.ERROR);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating one price product, because empty some parameter', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/price')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: '',
+                  name: '',
+                  items: 1,
+                  price: 5.8,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+                  expect(res.body.message).to.be.equal(config.RES.ERROR);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating one price product, because repeat quantity and name', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/price')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: '1',
+                  name: 'unidad',
+                  items: 2,
+                  price: 6.8,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+                  expect(res.body.message).to.be.equal(config.RES.ERROR);
+                  done();
+                });
+            });
+        });
+
+    });
+
+  });
+
+  describe('Get price product', () => {
+
+    it('should get all and one price product', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .get('/products/prices/' + resP.body.result[0]._id)
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .end((err, resPP) => {
+                  chai.request(app)
+                    .get('/products/prices/:' + resP.body.result[0]._id + '/' +
+                      resPP.body.result[0]._id)
+                    .set({ 'Authorization': 'JWT ' + resL.body.token,
+                      'Content-Type': 'application/json' })
+                    .end((err, res) => {
+                      expect(res).to.have.status(config.STATUS.OK);
+                      expect(res.body.result.name).to.exist;
+                      done();
+                    });
+                });
+            });
+        });
+
+    });
+
+    it('should fail trying to get all price products, because not authorization', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .get('/products/price/' + resP.body.result[0]._id)
+                .end((err, resPP) => {
+                  expect(resPP).to.have.status(config.STATUS.UNAUTHORIZED);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail trying to get one product, because not authorization', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .get('/products/price/' + resP.body.result[0]._id)
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .end((err, resPP) => {
+                  chai.request(app)
+                    .get('/products/price/:' + resP.body.result[0]._id + '/' +
+                      resPP.body.result[0]._id)
+                    .end((err, res) => {
+                      expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+                      done();
+                    });
+                });
+            });
+        });
+
+    });
+
+  });
+
+  describe('Create entry product', () => {
+
+    it('should create new entry product', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/entry')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: 100,
+                  unitCost: 12.5,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, respPE) => {
+                  expect(respPE).to.be.status(config.STATUS.CREATED);
+                  expect(respPE.body.message).to.be.equal(config.RES.CREATED);
+                  chai.request(app)
+                    .get('/products/' + resP.body.result[0]._id)
+                    .set({ 'Authorization': 'JWT ' + resL.body.token,
+                      'Content-Type': 'application/json' })
+                    .end((err, res) => {
+                      expect(res).to.have.status(config.STATUS.OK);
+                      expect(res.body.result.quantity).to.be.equal(100);
+                      expect(res.body.result.unitCost).to.be.equal(12.5);
+                      done();
+                    });
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating new entry product, because not authorization', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/entry')
+                .type('form')
+                .send({
+                  quantity: 1,
+                  unitCost: 12.5,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.UNAUTHORIZED);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating new entry product, because lack some parameter', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/entry')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: 1,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+                  expect(res.body.message).to.be.equal(config.RES.ERROR);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating new entry product, because incorrect type parameter', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/entry')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: 1,
+                  unitCost: '12.5',
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+                  expect(res.body.message).to.be.equal(config.RES.ERROR);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail creating new entry product, because negative numbers', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/entry')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: -1,
+                  unitCost: -12.5,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+                  expect(res.body.message).to.be.equal(config.RES.ERROR);
+                  done();
+                });
+            });
+        });
+
+    });
+
+  });
+
+  describe('Get entry products', () => {
+
+    it('should get all entry products', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .get('/products/entries/' + resP.body.result[0]._id)
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .end((err, res) => {
+                  expect(res).to.have.status(config.STATUS.OK);
+                  expect(res.body.result[0].date).to.exist;
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should fail get all entry products, because not authorization', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .get('/products/entries/' + resP.body.result[0]._id)
+                .end((err, res) => {
+                  expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+                  done();
+                });
+            });
+        });
+
     });
 
   });

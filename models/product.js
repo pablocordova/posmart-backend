@@ -7,7 +7,18 @@ var products_schema = mongoose.Schema({
   name: { type: String, unique: true, required: true },
   picture: { type: String },
   quantity: { type: Number },
-  unitCost: { type: Number }
+  unitCost: { type: Number },
+  prices: [{
+    quantity: { type: String },
+    name: { type: String },
+    items: { type: Number },
+    price: { type: Number }
+  }],
+  entries: [{
+    date: { type: Date },
+    quantity: { type: Number },
+    unitCost: { type: Number }
+  }]
 });
 
 const product = mongoose.model('Product', products_schema);
