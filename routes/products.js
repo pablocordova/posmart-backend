@@ -8,7 +8,22 @@ const router = express.Router();
 const config = require('../config/products');
 const Product = require('../models/product');
 
-router.post('/', passport.authenticate('jwt', { session: false }), (req, res) => {
+// My middleware to check permissions
+let haspermission = (req, res, next) => {
+
+  if (req.user.permissions.products) {
+    next();
+  } else {
+    res.status(config.STATUS.UNAUTHORIZED).send({
+      message: config.RES.UNAUTHORIZED
+    });
+  }
+
+};
+
+//router.use(permissions);
+
+router.post('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   let product = new Product();
   product.name = req.body.name;
@@ -30,94 +45,102 @@ router.post('/', passport.authenticate('jwt', { session: false }), (req, res) =>
 
 });
 
-router.post('/entry', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.post(
+  '/entry',
+  passport.authenticate('jwt', { session: false }),
+  haspermission,
+  (req, res) => {
 
-  const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
-  const unitCostIsEmpty = validator.isEmpty(req.body.unitCost + '');
-  const productIsEmpty = validator.isEmpty(req.body.product + '');
-  const quantityIsNumeric = validator.isNumeric(req.body.quantity + '');
-  const unitCostIsDecimal = validator.isDecimal(req.body.unitCost + '');
-  const arePositives = req.body.quantity >= 0 && req.body.unitCost >= 0;
+    const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
+    const unitCostIsEmpty = validator.isEmpty(req.body.unitCost + '');
+    const productIsEmpty = validator.isEmpty(req.body.product + '');
+    const quantityIsNumeric = validator.isNumeric(req.body.quantity + '');
+    const unitCostIsDecimal = validator.isDecimal(req.body.unitCost + '');
+    const arePositives = req.body.quantity >= 0 && req.body.unitCost >= 0;
 
-  if ( quantityIsEmpty || unitCostIsEmpty || productIsEmpty || !quantityIsNumeric ||
-    !unitCostIsDecimal || !arePositives) {
-    return res.status(config.STATUS.SERVER_ERROR).send({
-      message: config.RES.ERROR
-    });
-  }
-
-  Product.findById(req.body.product)
-    .then(product => {
-
-      req.body.date = moment();
-      product.entries.push(req.body);
-      product.save()
-        .then(() => {
-          return res.status(config.STATUS.CREATED).send({
-            message: config.RES.CREATED
-          });
-        })
-        .catch(() => {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR
-          });
-        });
-    })
-    .catch(() => {
+    if ( quantityIsEmpty || unitCostIsEmpty || productIsEmpty || !quantityIsNumeric ||
+      !unitCostIsDecimal || !arePositives) {
       return res.status(config.STATUS.SERVER_ERROR).send({
         message: config.RES.ERROR
       });
-    });
+    }
 
-});
+    Product.findById(req.body.product)
+      .then(product => {
 
-router.post('/price', passport.authenticate('jwt', { session: false }), (req, res) => {
-
-  const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
-  const nameIsEmpty = validator.isEmpty(req.body.name + '');
-  const itemsIsNumeric = validator.isNumeric(req.body.items + '');
-  const priceIsDecimal = validator.isDecimal(req.body.price + '');
-
-  if ( quantityIsEmpty || nameIsEmpty || !itemsIsNumeric || !priceIsDecimal) {
-    return res.status(config.STATUS.SERVER_ERROR).send({
-      message: config.RES.ERROR
-    });
-  }
-
-  Product.findById(req.body.product)
-    .then(product => {
-
-      // check case it is repeat data, TODO: research how to do this in the schema
-      for (let price of product.prices) {
-        if (price.quantity === req.body.quantity || price.name === req.body.name) {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR
+        req.body.date = moment();
+        product.entries.push(req.body);
+        product.save()
+          .then(() => {
+            return res.status(config.STATUS.CREATED).send({
+              message: config.RES.CREATED
+            });
+          })
+          .catch(() => {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR
+            });
           });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
+        });
+      });
+  }
+);
+
+router.post(
+  '/price',
+  passport.authenticate('jwt', { session: false }),
+  haspermission,
+  (req, res) => {
+
+    const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
+    const nameIsEmpty = validator.isEmpty(req.body.name + '');
+    const itemsIsNumeric = validator.isNumeric(req.body.items + '');
+    const priceIsDecimal = validator.isDecimal(req.body.price + '');
+
+    if ( quantityIsEmpty || nameIsEmpty || !itemsIsNumeric || !priceIsDecimal) {
+      return res.status(config.STATUS.SERVER_ERROR).send({
+        message: config.RES.ERROR
+      });
+    }
+
+    Product.findById(req.body.product)
+      .then(product => {
+
+        // check case it is repeat data, TODO: research how to do this in the schema
+        for (let price of product.prices) {
+          if (price.quantity === req.body.quantity || price.name === req.body.name) {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR
+            });
+          }
         }
-      }
 
-      product.prices.push(req.body);
-      product.save()
-        .then(() => {
-          return res.status(config.STATUS.CREATED).send({
-            message: config.RES.CREATED
+        product.prices.push(req.body);
+        product.save()
+          .then(() => {
+            return res.status(config.STATUS.CREATED).send({
+              message: config.RES.CREATED
+            });
+          })
+          .catch(() => {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR
+            });
           });
-        })
-        .catch(() => {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR
-          });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
         });
-    })
-    .catch(() => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
       });
-    });
+  }
+);
 
-});
-
-router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.get('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   Product.find({})
     .then(products => {
@@ -134,7 +157,7 @@ router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => 
 
 });
 
-router.get('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.get('/:id', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   Product.findById(req.params.id)
     .then(product => {
@@ -154,6 +177,7 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), (req, res) 
 router.get(
   '/entries/:productId',
   passport.authenticate('jwt', { session: false }),
+  haspermission,
   async (req, res) => {
 
     const productEntries = await Product.aggregate(
@@ -181,6 +205,7 @@ router.get(
 router.get(
   '/price/:productId/:priceIndex',
   passport.authenticate('jwt', { session: false }),
+  haspermission,
   async (req, res) => {
 
     let productPrice = await Product.aggregate(
@@ -211,6 +236,7 @@ router.get(
 router.get(
   '/prices/:productId',
   passport.authenticate('jwt', { session: false }),
+  haspermission,
   async (req, res) => {
 
     const productPrices = await Product.aggregate(

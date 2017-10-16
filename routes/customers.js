@@ -6,7 +6,20 @@ const router = express.Router();
 const config = require('../config/customers');
 const Customer = require('../models/customer');
 
-router.post('/', passport.authenticate('jwt', { session: false }), (req, res) => {
+// My middleware to check permissions
+let haspermission = (req, res, next) => {
+
+  if (req.user.permissions.customers) {
+    next();
+  } else {
+    res.status(config.STATUS.UNAUTHORIZED).send({
+      message: config.RES.UNAUTHORIZED
+    });
+  }
+
+};
+
+router.post('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   const dniIsEmpty = validator.isEmpty(req.body.dni + '');
   const firstnameIsEmpty = validator.isEmpty(req.body.firstname + '');
@@ -38,7 +51,7 @@ router.post('/', passport.authenticate('jwt', { session: false }), (req, res) =>
 
 });
 
-router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.get('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   Customer.find({})
     .then(customers => {
@@ -55,7 +68,7 @@ router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => 
 
 });
 
-router.get('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+router.get('/:id', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   Customer.findById(req.params.id)
     .then(customer => {

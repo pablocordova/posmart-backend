@@ -8,6 +8,13 @@ var user_schema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  permissions: {
+    customers: { type: Boolean, default: false },
+    products: { type: Boolean, default: false },
+    sales: { type: Boolean, default: false },
+    settings: { type: Boolean, default: false },
+    users: { type: Boolean, default: false }
+  },
   type: { type: String, required: true }
 });
 

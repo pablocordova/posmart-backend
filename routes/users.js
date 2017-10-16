@@ -9,9 +9,11 @@ const router = express.Router();
 // Create new user
 router.post('/', (req, res) => {
 
+  // Check because maybe the user has any permission
+  if (req.body.permissions) req.body.permissions = JSON.parse(req.body.permissions);
+
   let user = new User(req.body);
   // Validate params
-
   const isEmail = validator.isEmail(user.email + '');
   const isLengthUser = validator.isLength(user.username + '', config.USERNAME);
   const isLengthPass = validator.isLength(user.password + '', config.PASSWORD);

@@ -27,7 +27,14 @@ describe('USER', () => {
           'username': 'usernameTester1',
           'email': 'email1@email.com',
           'password': '12K45p78',
-          'type': 'normal'
+          'type': 'normal',
+          'permissions': '{' +
+            '"customers": true,' +
+            '"products": true,' +
+            '"sales": true,' +
+            '"settings": true,' +
+            '"users": true' +
+          '}'
         })
         .end((err, res) => {
           expect(res).to.have.status(201);
