@@ -328,15 +328,15 @@ describe('PRODUCT', () => {
                 .get('/products/prices/' + resP.body.result[0]._id)
                 .set({ 'Authorization': 'JWT ' + resL.body.token,
                   'Content-Type': 'application/json' })
-                .end((err, resPP) => {
+                .end(() => {
+                  expect(resP).to.have.status(config.STATUS.OK);
                   chai.request(app)
-                    .get('/products/prices/:' + resP.body.result[0]._id + '/' +
-                      resPP.body.result[0]._id)
+                    .get('/products/price/' + resP.body.result[0]._id + '/0')
                     .set({ 'Authorization': 'JWT ' + resL.body.token,
                       'Content-Type': 'application/json' })
                     .end((err, res) => {
                       expect(res).to.have.status(config.STATUS.OK);
-                      expect(res.body.result.name).to.exist;
+                      expect(res.body.result.price.name).to.exist;
                       done();
                     });
                 });
@@ -358,7 +358,7 @@ describe('PRODUCT', () => {
             .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
             .end((err, resP) => {
               chai.request(app)
-                .get('/products/price/' + resP.body.result[0]._id)
+                .get('/products/prices/' + resP.body.result[0]._id)
                 .end((err, resPP) => {
                   expect(resPP).to.have.status(config.STATUS.UNAUTHORIZED);
                   done();
@@ -381,13 +381,12 @@ describe('PRODUCT', () => {
             .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
             .end((err, resP) => {
               chai.request(app)
-                .get('/products/price/' + resP.body.result[0]._id)
+                .get('/products/prices/' + resP.body.result[0]._id)
                 .set({ 'Authorization': 'JWT ' + resL.body.token,
                   'Content-Type': 'application/json' })
-                .end((err, resPP) => {
+                .end(() => {
                   chai.request(app)
-                    .get('/products/price/:' + resP.body.result[0]._id + '/' +
-                      resPP.body.result[0]._id)
+                    .get('/products/price/:' + resP.body.result[0]._id + '/0')
                     .end((err, res) => {
                       expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
                       done();
@@ -433,8 +432,8 @@ describe('PRODUCT', () => {
                       'Content-Type': 'application/json' })
                     .end((err, res) => {
                       expect(res).to.have.status(config.STATUS.OK);
-                      expect(res.body.result.quantity).to.be.equal(100);
-                      expect(res.body.result.unitCost).to.be.equal(12.5);
+                      expect(res.body.result.entries[0].quantity).to.be.equal(100);
+                      expect(res.body.result.entries[0].unitCost).to.be.equal(12.5);
                       done();
                     });
                 });
@@ -503,38 +502,6 @@ describe('PRODUCT', () => {
 
     });
 
-    it('should fail creating new entry product, because incorrect type parameter', done => {
-
-      chai.request(app)
-        .post('/login')
-        .type('form')
-        .send(loginUser)
-        .end((err, resL) => {
-          chai.request(app)
-            .get('/products')
-            .type('form')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
-            .end((err, resP) => {
-              chai.request(app)
-                .post('/products/entry')
-                .type('form')
-                .set({ 'Authorization': 'JWT ' + resL.body.token,
-                  'Content-Type': 'application/json' })
-                .send({
-                  quantity: 1,
-                  unitCost: '12.5',
-                  product: resP.body.result[0]._id
-                })
-                .end((err, res) => {
-                  expect(res).to.be.status(config.STATUS.SERVER_ERROR);
-                  expect(res.body.message).to.be.equal(config.RES.ERROR);
-                  done();
-                });
-            });
-        });
-
-    });
-
     it('should fail creating new entry product, because negative numbers', done => {
 
       chai.request(app)
@@ -589,7 +556,7 @@ describe('PRODUCT', () => {
                   'Content-Type': 'application/json' })
                 .end((err, res) => {
                   expect(res).to.have.status(config.STATUS.OK);
-                  expect(res.body.result[0].date).to.exist;
+                  expect(res.body.result[0].entries[0].date).to.exist;
                   done();
                 });
             });
