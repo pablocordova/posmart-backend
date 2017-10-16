@@ -11,6 +11,7 @@ const passportJWT = require('passport-jwt');
 const User = require('./models/user');
 
 // Get our API routes
+const customers = require('./routes/customers');
 const login = require('./routes/login');
 const products = require('./routes/products');
 const users = require('./routes/users');
@@ -85,6 +86,7 @@ mongoose.connect(MONGO_PATH, { useMongoClient: true }, err => {
  * ROUTES
  */
 
+app.use('/customers', customers);
 app.use('/login', login);
 app.use('/products', products);
 app.use('/users', users);
