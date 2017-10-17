@@ -21,8 +21,6 @@ let haspermission = (req, res, next) => {
 
 };
 
-//router.use(permissions);
-
 router.post('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   let product = new Product();
@@ -70,6 +68,9 @@ router.post(
 
         req.body.date = moment();
         product.entries.push(req.body);
+        // Add to the general quantity and general unitCost
+        product.quantity += parseInt(req.body.quantity);
+        product.unitCost = (product.unitCost + parseFloat(req.body.unitCost))/2;
         product.save()
           .then(() => {
             return res.status(config.STATUS.CREATED).send({
@@ -112,7 +113,7 @@ router.post(
 
         // check case it is repeat data, TODO: research how to do this in the schema
         for (let price of product.prices) {
-          if (price.quantity === req.body.quantity || price.name === req.body.name) {
+          if (price.quantity === req.body.quantity && price.name === req.body.name) {
             return res.status(config.STATUS.SERVER_ERROR).send({
               message: config.RES.ERROR
             });

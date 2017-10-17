@@ -30,7 +30,7 @@ describe('PRODUCT', () => {
         .end((err, resL) => {
           chai.request(app)
             .post('/products')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json'})
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
             .send({
               category: 'Detergentes',
               minimumUnit: 'Unidad',
@@ -68,7 +68,7 @@ describe('PRODUCT', () => {
         .end((err, resL) => {
           chai.request(app)
             .post('/products')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json'})
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
             .send({
               category: 'Detergentes',
               minimumUnit: 'Unidad',
@@ -164,6 +164,40 @@ describe('PRODUCT', () => {
                   name: 'unidad',
                   items: 1,
                   price: 5.8,
+                  product: resP.body.result[0]._id
+                })
+                .end((err, res) => {
+                  expect(res).to.be.status(config.STATUS.CREATED);
+                  expect(res.body.message).to.be.equal(config.RES.CREATED);
+                  done();
+                });
+            });
+        });
+
+    });
+
+    it('should create one prices product more, to test sale unit test', done => {
+
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, resL) => {
+          chai.request(app)
+            .get('/products')
+            .type('form')
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
+            .end((err, resP) => {
+              chai.request(app)
+                .post('/products/price')
+                .type('form')
+                .set({ 'Authorization': 'JWT ' + resL.body.token,
+                  'Content-Type': 'application/json' })
+                .send({
+                  quantity: '1',
+                  name: 'docena',
+                  items: 12,
+                  price: 61,
                   product: resP.body.result[0]._id
                 })
                 .end((err, res) => {

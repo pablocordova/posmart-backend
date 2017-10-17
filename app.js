@@ -14,6 +14,7 @@ const User = require('./models/user');
 const customers = require('./routes/customers');
 const login = require('./routes/login');
 const products = require('./routes/products');
+const sales = require('./routes/sales');
 const users = require('./routes/users');
 
 // Strategy for authentification
@@ -89,6 +90,7 @@ mongoose.connect(MONGO_PATH, { useMongoClient: true }, err => {
 app.use('/customers', customers);
 app.use('/login', login);
 app.use('/products', products);
+app.use('/sales', sales);
 app.use('/users', users);
 
 /**

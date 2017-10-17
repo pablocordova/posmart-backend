@@ -32,7 +32,7 @@ router.post('/', function (req, res) {
         }
 
         if (isMatch) {
-          var payload = {id: user._id};
+          var payload = { id: user._id };
           var token = jwt.sign(payload, secretKey);
 
           user.password = undefined;

@@ -28,7 +28,7 @@ describe('CUSTOMER', () => {
         .end((err, resL) => {
           chai.request(app)
             .post('/customers')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json'})
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
             .send({
               firstname: 'Pablo cesar',
               lastname: 'Cordova morales',
@@ -68,7 +68,7 @@ describe('CUSTOMER', () => {
         .end((err, resL) => {
           chai.request(app)
             .post('/customers')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json'})
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
             .send({
               firstname: 'Pablo cesar',
               lastname: 'Cordova morales',
@@ -91,7 +91,7 @@ describe('CUSTOMER', () => {
         .end((err, resL) => {
           chai.request(app)
             .post('/customers')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json'})
+            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
             .send({
               firstname: 'Pablo cesar',
               lastname: 'Cordova morales',
