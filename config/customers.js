@@ -5,7 +5,7 @@ config.RES = {
   CUSTOMER_NOT_EXIST: 'Customer does not exist',
   CUSTOMER_SALES: 'Error trying deleting, customer already has sales',
   ERROR: 'Error processing data',
-  NOCREATED: 'Error trying to create item',
+  NOCREATED: 'Error trying to create customer',
   OK: 'OK',
   UPDATED: 'Customer was updated'
 };
