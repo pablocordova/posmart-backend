@@ -2,9 +2,12 @@ var config = new Object();
 
 config.RES = {
   CREATED: 'Created successfully',
+  CUSTOMER_NOT_EXIST: 'Customer does not exist',
+  CUSTOMER_SALES: 'Error trying deleting, customer already has sales',
   ERROR: 'Error processing data',
   NOCREATED: 'Error trying to create item',
-  OK: 'OK'
+  OK: 'OK',
+  UPDATED: 'Customer was updated'
 };
 
 config.STATUS = {
