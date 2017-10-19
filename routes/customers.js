@@ -39,14 +39,16 @@ router.post('/', passport.authenticate('jwt', { session: false }), haspermission
   customer.address = req.body.address;
 
   customer.save()
-    .then(() => {
+    .then((customerCreated) => {
       return res.status(config.STATUS.CREATED).send({
-        message: config.RES.CREATED
+        message: config.RES.CREATED,
+        result: customerCreated
       });
     })
-    .catch(() => {
+    .catch((err) => {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.NOCREATED
+        message: config.RES.ERROR,
+        result: err
       });
     });
 

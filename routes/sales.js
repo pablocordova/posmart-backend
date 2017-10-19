@@ -154,14 +154,16 @@ router.post(
     sale.total = accumulativeTotalPrice;
 
     sale.save()
-      .then(() => {
+      .then((saleCreated) => {
         return res.status(config.STATUS.CREATED).send({
-          message: config.RES.CREATED
+          message: config.RES.CREATED,
+          result: saleCreated
         });
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: err
+          message: config.RES.ERROR,
+          result: err
         });
       });
 
@@ -174,12 +176,12 @@ router.get('/', passport.authenticate('jwt', { session: false }), haspermission,
     .then(sales => {
       return res.status(config.STATUS.OK).send({
         result: sales,
-        message: config.RES.OK,
+        message: config.RES.OK
       });
     })
     .catch(() => {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR,
+        message: config.RES.ERROR
       });
     });
 
@@ -191,12 +193,12 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), haspermissi
     .then(sale => {
       return res.status(config.STATUS.OK).send({
         result: sale,
-        message: config.RES.OK,
+        message: config.RES.OK
       });
     })
     .catch(() => {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR,
+        message: config.RES.ERROR
       });
     });
 

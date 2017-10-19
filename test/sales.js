@@ -3,241 +3,309 @@ const chaiHttp = require('chai-http');
 
 const app = require('../app');
 const config = require('../config/sales');
+const Customer = require('../models/customer');
 const Sale = require('../models/sale');
+const Product = require('../models/product');
+const User = require('../models/user');
 
 const expect = chai.expect;
-const loginUser = { 'email': 'email1@email.com', 'password': '12K45p78' };
 
 chai.use(chaiHttp);
 
-describe('SALE', () => {
+let auth = '';
+let customerId = '';
+let productId = '';
+let saleId = '';
 
-  describe('Create sale', () => {
+const user = {
+  'username': 'usernameTester1',
+  'email': 'email1@email.com',
+  'password': '12K45p78',
+  'type': 'normal',
+  'permissions': '{' +
+    '"customers": true,' +
+    '"products": true,' +
+    '"sales": true,' +
+    '"settings": true,' +
+    '"users": true' +
+  '}'
+};
+const userObj = JSON.parse(JSON.stringify(user));
+const loginUser = { 'email': userObj.email, 'password': userObj.password };
 
-    // Clear Sale collections
-    before(done => {
+const customer = {
+  firstname: 'Pablo cesar',
+  lastname: 'Cordova morales',
+  dni: '06013059',
+  phone: '982251795',
+  address: 'Jr agusto B. Leguia 233'
+};
+
+const product = {
+  category: 'Detergentes',
+  minimumUnit: 'Unidad',
+  name: 'Magia blanca x360gr',
+  picture: 'fake/base64Pic=',
+};
+
+describe('Sale API routes', () => {
+
+  // Clear collections
+  before(done => {
+
+    User.remove({}, () => {
       Sale.remove({}, () => {
-        done();
+        Customer.remove({}, () => {
+          Product.remove({}, () => {
+            done();
+          });
+        });
       });
     });
 
-    it('should create one sale', done => {
+  });
+
+  describe('Initialize data', () => {
+
+    it('Create one user with normal type', done => {
 
       chai.request(app)
-        .post('/login')
+        .post('/users')
         .type('form')
-        .send(loginUser)
-        .end((err, resL) => {
-          chai.request(app)
-            .get('/customers')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
-            .end((err, resC) => {
-              chai.request(app)
-                .get('/products')
-                .set({
-                  'Authorization': 'JWT ' + resL.body.token,
-                  'Content-Type': 'application/json'
-                })
-                .end((err, resP) => {
-                  chai.request(app)
-                    .post('/sales')
-                    .set({
-                      'Authorization': 'JWT ' + resL.body.token,
-                      'Content-Type': 'application/json'
-                    })
-                    .send({
-                      client: resC.body.result[0]._id,
-                      products: '[' +
-                        '{ "quantity": 4, "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 0}' + ',' +
-                        '{ "quantity": 2, "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 1}' +
-                      ']'
-                    })
-                    .end((err, resS) => {
-                      expect(resS).to.have.status(config.STATUS.CREATED);
-                      expect(resS.body.message).to.be.equal(config.RES.CREATED);
-                      chai.request(app)
-                        .get('/products/' + resP.body.result[0]._id)
-                        .set({
-                          'Authorization': 'JWT ' + resL.body.token,
-                          'Content-Type': 'application/json'
-                        })
-                        .end((err, res) => {
-                          expect(res).to.have.status(config.STATUS.OK);
-                          expect(res.body.result.quantity).to.be.equal(72);
-                          done();
-                        });
-                    });
-                });
-            });
+        .send(user)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.CREATED);
+          done();
         });
 
     });
 
-    it('should fail creating one sale because doesnt have authorization', done => {
+    it('Login and get token necessary for routes', done => {
 
       chai.request(app)
         .post('/login')
         .type('form')
         .send(loginUser)
-        .end((err, resL) => {
-          chai.request(app)
-            .get('/customers')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
-            .end((err, resC) => {
-              chai.request(app)
-                .get('/products')
-                .set({
-                  'Authorization': 'JWT ' + resL.body.token,
-                  'Content-Type': 'application/json'
-                })
-                .end((err, resP) => {
-                  chai.request(app)
-                    .post('/sales')
-                    .send({
-                      client: resC.body.result[0]._id,
-                      products: '[' +
-                        '{ "quantity": 4, "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 0}' + ',' +
-                        '{ "quantity": 2, "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 1}' +
-                      ']'
-                    })
-                    .end((err, res) => {
-                      expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
-                      done();
-                    });
-                });
-            });
+        .end((err, res) => {
+          auth = { 'Authorization': 'JWT ' + res.body.token, 'Content-Type': 'application/json' };
+          done();
         });
 
     });
 
-    it('should fail creating one sale because duplicated name and price product', done => {
+    it('Create one customer', done => {
 
       chai.request(app)
-        .post('/login')
-        .type('form')
-        .send(loginUser)
-        .end((err, resL) => {
-          chai.request(app)
-            .get('/customers')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
-            .end((err, resC) => {
-              chai.request(app)
-                .get('/products')
-                .set({
-                  'Authorization': 'JWT ' + resL.body.token,
-                  'Content-Type': 'application/json'
-                })
-                .end((err, resP) => {
-                  chai.request(app)
-                    .post('/sales')
-                    .set({
-                      'Authorization': 'JWT ' + resL.body.token,
-                      'Content-Type': 'application/json'
-                    })
-                    .send({
-                      client: resC.body.result[0]._id,
-                      products: '[' +
-                        '{ "quantity": 4, "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 0}' + ',' +
-                        '{ "quantity": 2, "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 0}' +
-                      ']'
-                    })
-                    .end((err, res) => {
-                      expect(res).to.have.status(config.STATUS.SERVER_ERROR);
-                      done();
-                    });
-                });
-            });
+        .post('/customers')
+        .set(auth)
+        .send(customer)
+        .end((err, res) => {
+          customerId = res.body.result._id;
+          expect(res).to.have.status(config.STATUS.CREATED);
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
+          done();
         });
 
     });
 
-    it('should fail creating one sale because lack some parameter', done => {
+    it('Create one product', done => {
 
       chai.request(app)
-        .post('/login')
+        .post('/products')
+        .set(auth)
+        .send(product)
+        .end((err, res) => {
+          productId = res.body.result._id;
+          expect(res).to.have.status(config.STATUS.CREATED);
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
+          done();
+        });
+
+    });
+
+    it('Create price product: quantity->1, name->unidad', done => {
+
+      chai.request(app)
+        .post('/products/price')
         .type('form')
-        .send(loginUser)
-        .end((err, resL) => {
-          chai.request(app)
-            .get('/customers')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
-            .end((err, resC) => {
-              chai.request(app)
-                .get('/products')
-                .set({
-                  'Authorization': 'JWT ' + resL.body.token,
-                  'Content-Type': 'application/json'
-                })
-                .end((err, resP) => {
-                  chai.request(app)
-                    .post('/sales')
-                    .set({
-                      'Authorization': 'JWT ' + resL.body.token,
-                      'Content-Type': 'application/json'
-                    })
-                    .send({
-                      client: resC.body.result[0]._id,
-                      products: '[' +
-                        '{ "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 0}' + ',' +
-                        '{ "quantity": 2, "product": "' +
-                        resP.body.result[0]._id +
-                        '", "priceIndex": 1}' +
-                      ']'
-                    })
-                    .end((err, res) => {
-                      expect(res).to.have.status(config.STATUS.SERVER_ERROR);
-                      done();
-                    });
-                });
-            });
+        .set(auth)
+        .send({
+          quantity: '1',
+          name: 'unidad',
+          items: 1,
+          price: 5.8,
+          product: productId
+        })
+        .end((err, res) => {
+          expect(res).to.be.status(config.STATUS.CREATED);
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
+          done();
+        });
+
+    });
+
+    it('Create price product: quantity->1, name->docena', done => {
+
+      chai.request(app)
+        .post('/products/price')
+        .type('form')
+        .set(auth)
+        .send({
+          quantity: '1',
+          name: 'docena',
+          items: 12,
+          price: 61,
+          product: productId
+        })
+        .end((err, res) => {
+          expect(res).to.be.status(config.STATUS.CREATED);
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
+          done();
+        });
+
+    });
+
+    it('Create entry product: quantity->100, unitCost->12.5', done => {
+
+      chai.request(app)
+        .post('/products/entry')
+        .type('form')
+        .set(auth)
+        .send({
+          quantity: 100,
+          unitCost: 12.5,
+          product: productId
+        })
+        .end((err, resp) => {
+          expect(resp).to.be.status(config.STATUS.CREATED);
+          expect(resp.body.message).to.be.equal(config.RES.CREATED);
+          done();
         });
 
     });
 
   });
 
-  describe('Get sale', () => {
+  describe('POST /sales', () => {
 
-    it('should get all and one sale', done => {
+    it('Create one sale', done => {
+
       chai.request(app)
-        .post('/login')
-        .type('form')
-        .send(loginUser)
-        .end((err, resL) => {
+        .post('/sales')
+        .set(auth)
+        .send({
+          client: customerId,
+          products: '[' +
+            '{ "quantity": 4, "product": "' +
+            productId +
+            '", "priceIndex": 0}' + ',' +
+            '{ "quantity": 2, "product": "' +
+            productId +
+            '", "priceIndex": 1}' +
+          ']'
+        })
+        .end((err, resS) => {
+          saleId = resS.body.result._id;
+          expect(resS).to.have.status(config.STATUS.CREATED);
+          expect(resS.body.message).to.be.equal(config.RES.CREATED);
           chai.request(app)
-            .get('/sales')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
-            .end((err, resS) => {
-              expect(resS).to.have.status(config.STATUS.OK);
-              expect(resS.body.result[0]._id).to.exist;
-              chai.request(app)
-                .get('/sales/' + resS.body.result[0]._id)
-                .set({ 'Authorization': 'JWT ' + resL.body.token,
-                  'Content-Type': 'application/json' })
-                .end((err, res) => {
-                  expect(res).to.have.status(config.STATUS.OK);
-                  expect(res.body.result._id).to.exist;
-                  done();
-                });
+            .get('/products/' + productId)
+            .set(auth)
+            .end((err, res) => {
+              expect(res).to.have.status(config.STATUS.OK);
+              expect(res.body.result.quantity).to.be.equal(72);
+              done();
             });
         });
+
     });
 
-    it('should fail trying to get all products, because not authorization', done => {
+    it('Fail creating one sale because doesnt have authorization', done => {
+
+      chai.request(app)
+        .post('/sales')
+        .send({
+          client: customerId,
+          products: '[' +
+            '{ "quantity": 4, "product": "' +
+            productId +
+            '", "priceIndex": 0}' + ',' +
+            '{ "quantity": 2, "product": "' +
+            productId +
+            '", "priceIndex": 1}' +
+          ']'
+        })
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+    it('Fail creating one sale because duplicated name and price product', done => {
+
+      chai.request(app)
+        .post('/sales')
+        .set(auth)
+        .send({
+          client: customerId,
+          products: '[' +
+            '{ "quantity": 4, "product": "' +
+            productId +
+            '", "priceIndex": 0}' + ',' +
+            '{ "quantity": 2, "product": "' +
+            productId +
+            '", "priceIndex": 0}' +
+          ']'
+        })
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          done();
+        });
+
+    });
+
+    it('Fail creating one sale because lack some parameter', done => {
+
+      chai.request(app)
+        .post('/sales')
+        .set(auth)
+        .send({
+          client: customerId,
+          products: '[' +
+            '{ "product": "' +
+            productId +
+            '", "priceIndex": 0}' + ',' +
+            '{ "quantity": 2, "product": "' +
+            productId +
+            '", "priceIndex": 1}' +
+          ']'
+        })
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('GET /sales', () => {
+
+    it('Get list of sales', done => {
+
+      chai.request(app)
+        .get('/sales')
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result[0]._id).to.exist;
+          done();
+        });
+
+    });
+
+    it('Fail trying to get list of products because not authorization', done => {
       chai.request(app)
         .get('/sales')
         .end((err, res) => {
@@ -246,24 +314,31 @@ describe('SALE', () => {
         });
     });
 
-    it('should fail trying to get one product, because not authorization', done => {
+  });
+
+  describe('GET/sales/:id', () => {
+
+    it('Get one sale by id', done => {
       chai.request(app)
-        .post('/login')
-        .type('form')
-        .send(loginUser)
-        .end((err, resL) => {
-          chai.request(app)
-            .get('/sales')
-            .set({ 'Authorization': 'JWT ' + resL.body.token, 'Content-Type': 'application/json' })
-            .end((err, resS) => {
-              chai.request(app)
-                .get('/sales/' + resS.body.result[0]._id)
-                .end((err, res) => {
-                  expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
-                  done();
-                });
-            });
+        .get('/sales/' + saleId)
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result._id).to.exist;
+          done();
         });
+
+    });
+
+    it('Fail trying to get one product, because not authorization', done => {
+
+      chai.request(app)
+        .get('/sales/' + saleId)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
     });
 
   });

@@ -29,7 +29,7 @@ const user = {
 const userObj = JSON.parse(JSON.stringify(user));
 const loginUser = { 'email': userObj.email, 'password': userObj.password };
 
-const customer_create_one = {
+const customer1 = {
   firstname: 'Pablo cesar',
   lastname: 'Cordova morales',
   dni: '06013059',
@@ -37,20 +37,24 @@ const customer_create_one = {
   address: 'Jr agusto B. Leguia 233'
 };
 
-const customer_update_one = {
-  firstname: 'Pablo César',
-  lastname: 'Córdova Morales',
-  dni: '44162124',
-  phone: '998823500',
-  address: 'Jr agusto B. Leguia 233 Carabayllo'
-};
+// Customer created to check duplicated dni
 
-const customer_create_two = {
+const customer2 = {
   firstname: 'Pablo cesar',
   lastname: 'Cordova morales',
   dni: '66666666',
   phone: '982251795',
   address: 'Jr agusto B. Leguia 233'
+};
+
+// Customer used to update it
+
+const customer3 = {
+  firstname: 'Pablo César',
+  lastname: 'Córdova Morales',
+  dni: '44162124',
+  phone: '998823500',
+  address: 'Jr agusto B. Leguia 233 Carabayllo'
 };
 
 const customer_without_dni = {
@@ -108,8 +112,9 @@ describe('Customer API routes', () => {
       chai.request(app)
         .post('/customers')
         .set(auth)
-        .send(customer_create_one)
+        .send(customer1)
         .end((err, res) => {
+          customerId = res.body.result._id;
           expect(res).to.have.status(config.STATUS.CREATED);
           expect(res.body.message).to.be.equal(config.RES.CREATED);
           done();
@@ -120,7 +125,7 @@ describe('Customer API routes', () => {
       chai.request(app)
         .post('/customers')
         .set(auth)
-        .send(customer_create_two)
+        .send(customer2)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.CREATED);
           expect(res.body.message).to.be.equal(config.RES.CREATED);
@@ -131,7 +136,7 @@ describe('Customer API routes', () => {
     it('Fail creating one customer because doesnt have authorization', done => {
       chai.request(app)
         .post('/customers')
-        .send(customer_create_one)
+        .send(customer1)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
           done();
@@ -142,7 +147,7 @@ describe('Customer API routes', () => {
       chai.request(app)
         .post('/customers')
         .set(auth)
-        .send(customer_create_one)
+        .send(customer1)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.SERVER_ERROR);
           done();
@@ -169,7 +174,6 @@ describe('Customer API routes', () => {
         .get('/customers')
         .set(auth)
         .end((err, res) => {
-          customerId = res.body.result[0]._id;
           expect(res).to.have.status(config.STATUS.OK);
           done();
         });
@@ -217,10 +221,10 @@ describe('Customer API routes', () => {
       chai.request(app)
         .put('/customers/' + customerId)
         .set(auth)
-        .send(customer_update_one)
+        .send(customer3)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.OK);
-          expect(res.body.result.dni).to.be.equal(customer_update_one.dni);
+          expect(res.body.result.dni).to.be.equal(customer3.dni);
           done();
         });
     });
@@ -228,7 +232,7 @@ describe('Customer API routes', () => {
     it('Fail updating one customer because doesnt have authorization', done => {
       chai.request(app)
         .put('/customers/' + customerId)
-        .send(customer_update_one)
+        .send(customer3)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
           done();
@@ -239,7 +243,7 @@ describe('Customer API routes', () => {
       chai.request(app)
         .put('/customers/' + customerId)
         .set(auth)
-        .send(customer_create_two)
+        .send(customer2)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.SERVER_ERROR);
           done();

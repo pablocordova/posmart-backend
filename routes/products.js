@@ -30,9 +30,10 @@ router.post('/', passport.authenticate('jwt', { session: false }), haspermission
   product.picture = req.body.picture;
 
   product.save()
-    .then(() => {
+    .then((productCreated) => {
       return res.status(config.STATUS.CREATED).send({
-        message: config.RES.CREATED
+        message: config.RES.CREATED,
+        result: productCreated
       });
     })
     .catch(() => {
@@ -122,20 +123,23 @@ router.post(
 
         product.prices.push(req.body);
         product.save()
-          .then(() => {
+          .then((priceCreated) => {
             return res.status(config.STATUS.CREATED).send({
-              message: config.RES.CREATED
+              message: config.RES.CREATED,
+              result: priceCreated.price
             });
           })
-          .catch(() => {
+          .catch((err) => {
             return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR
+              message: config.RES.ERROR,
+              result: err
             });
           });
       })
-      .catch(() => {
+      .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR,
+          result: err
         });
       });
   }
