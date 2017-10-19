@@ -9,11 +9,11 @@ var user_schema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   permissions: {
-    customers: { type: Boolean, default: false },
-    products: { type: Boolean, default: false },
-    sales: { type: Boolean, default: false },
-    settings: { type: Boolean, default: false },
-    users: { type: Boolean, default: false }
+    customers: { type: Boolean, default: false, required: true },
+    products: { type: Boolean, default: false, required: true },
+    sales: { type: Boolean, default: false, required: true },
+    settings: { type: Boolean, default: false, required: true },
+    users: { type: Boolean, default: false, required: true }
   },
   type: { type: String, required: true }
 });

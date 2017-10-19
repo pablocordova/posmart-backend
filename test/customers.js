@@ -57,7 +57,7 @@ const customer3 = {
   address: 'Jr agusto B. Leguia 233 Carabayllo'
 };
 
-const customer_without_dni = {
+const customerWithoutDni = {
   firstname: 'Pablo cesar',
   lastname: 'Cordova morales',
   phone: '982251795',
@@ -158,7 +158,7 @@ describe('Customer API routes', () => {
       chai.request(app)
         .post('/customers')
         .set(auth)
-        .send(customer_without_dni)
+        .send(customerWithoutDni)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.SERVER_ERROR);
           done();
@@ -254,7 +254,7 @@ describe('Customer API routes', () => {
       chai.request(app)
         .put('/customers/' + customerId)
         .set(auth)
-        .send(customer_without_dni)
+        .send(customerWithoutDni)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.SERVER_ERROR);
           done();
