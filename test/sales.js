@@ -316,7 +316,7 @@ describe('Sale API routes', () => {
 
   });
 
-  describe('GET/sales/:id', () => {
+  describe('GET /sales/:id', () => {
 
     it('Get one sale by id', done => {
       chai.request(app)
