@@ -26,7 +26,8 @@ config.STATUS = {
 config.RES = {
   OK: 'OK',
   CREATED: 'User created',
-  NOCREATED: 'Error to create user'
+  NOCREATED: 'Error to create user',
+  USER_SALES: 'Error trying deleting, user already has sales',
 };
 
 module.exports = config;

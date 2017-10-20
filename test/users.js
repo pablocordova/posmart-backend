@@ -23,6 +23,25 @@ const user = {
   '}'
 };
 
+const user_updated = {
+  'username': 'usernameTester2',
+  'email': 'email2@email.com',
+  'password': '12K45o78',
+  'type': 'normal',
+  'permissions': '{' +
+    '"customers": false,' +
+    '"products": true,' +
+    '"sales": true,' +
+    '"settings": true,' +
+    '"users": true' +
+  '}'
+};
+
+const userObjUpdated = JSON.parse(JSON.stringify(user_updated));
+
+const userObj = JSON.parse(JSON.stringify(user));
+const loginUser = { 'email': userObj.email, 'password': userObj.password };
+
 const userWithoutPermission = {
   'username': 'usernameTester1',
   'email': 'email1@email.com',
@@ -114,6 +133,9 @@ const userInvalidPassword = {
   '}'
 };
 
+let auth = '';
+let userId = '';
+
 describe('User API routes', () => {
 
   // Clear collection
@@ -132,6 +154,7 @@ describe('User API routes', () => {
         .type('form')
         .send(user)
         .end((err, res) => {
+          userId = res.body.result._id;
           expect(res).to.have.status(config.STATUS.CREATED);
           expect(res).to.be.json;
           expect(res.body.message).to.be.equal(config.RES.CREATED);
@@ -240,6 +263,218 @@ describe('User API routes', () => {
           expect(res).to.have.status(config.STATUS.SERVER_ERROR);
           expect(res).to.be.json;
           expect(res.body.message).to.be.equal(config.RES.NOCREATED);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('Get token for next tests', () => {
+
+    it('Login and get token', done => {
+      chai.request(app)
+        .post('/login')
+        .type('form')
+        .send(loginUser)
+        .end((err, res) => {
+          auth = { 'Authorization': 'JWT ' + res.body.token, 'Content-Type': 'application/json' };
+          done();
+        });
+    });
+
+  });
+
+  describe('GET /users', () => {
+
+    it('Get list of users', done => {
+
+      chai.request(app)
+        .get('/users')
+        .type('form')
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result).to.exist;
+          done();
+        });
+
+    });
+
+    it('Fail trying to get list of users because not authorization', done => {
+
+      chai.request(app)
+        .get('/users')
+        .type('form')
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('GET /users/:id', () => {
+
+    it('Get one of user', done => {
+
+      chai.request(app)
+        .get('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result).to.exist;
+          done();
+        });
+
+    });
+
+    it('Fail trying to get one of user because not authorization', done => {
+
+      chai.request(app)
+        .get('/users/' + userId)
+        .type('form')
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('PUT /users/:id', () => {
+
+    it('Update user with normal type', done => {
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(user_updated)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result.username).to.be.equal(userObjUpdated.username);
+          expect(res.body.result.email).to.be.equal(userObjUpdated.email);
+          done();
+        });
+
+    });
+
+    it('Fail updating user because lacking some parameters', done => {
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userWithoutPermission)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          done();
+        });
+
+    });
+
+    it('Fail updating user because empty parameters', done => {
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userEmpty)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          done();
+        });
+
+    });
+
+    it('Fail updating user because username less 2 caracters', done => {
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userUsernameError)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          done();
+        });
+
+    });
+
+    it('Fail updating user because invalid email', done => {
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userInvalidEmail)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('PUT /users/:id/enabled', () => {
+
+    it('Update enabled user to false', done => {
+
+      chai.request(app)
+        .put('/users/' + userId + '/enabled')
+        .type('form')
+        .set(auth)
+        .send({ enabled: false })
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result.enabled).to.be.equal(false);
+          done();
+        });
+
+    });
+
+    it('Fail updating enabled user because authorization', done => {
+
+      chai.request(app)
+        .put('/users/' + userId + '/enabled')
+        .type('form')
+        .send({ enabled: false })
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('DELETE /users/:id', () => {
+
+    // Pass delete test, was writing in final, because only exits 1 element
+
+    it('Fail delete user, because not have authorization', done => {
+
+      chai.request(app)
+        .delete('/users/' + userId)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+    it('Delete user', done => {
+
+      chai.request(app)
+        .delete('/users/' + userId)
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
           done();
         });
 
