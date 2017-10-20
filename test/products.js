@@ -35,6 +35,14 @@ let product = {
   picture: 'fake/base64Pic=',
 };
 
+let productUpdated = {
+  category: 'Bebidas',
+  minimumUnit: 'Kilogramo',
+  name: 'Magia blanca x180gr',
+  picture: 'fake/base64Pic=456',
+};
+
+
 describe('Product API routes', () => {
 
   // Clear collections
@@ -73,6 +81,8 @@ describe('Product API routes', () => {
     });
 
   });
+
+  // GENERAL PRODUCT
 
   describe('POST /products', () => {
 
@@ -173,6 +183,71 @@ describe('Product API routes', () => {
     });
 
   });
+
+  describe('PUT /products/:id', () => {
+
+    it('Update one product', done => {
+
+      chai.request(app)
+        .put('/products/' + productId)
+        .set(auth)
+        .send(productUpdated)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result.category).to.be.equal(productUpdated.category);
+          expect(res.body.result.minimumUnit).to.be.equal(productUpdated.minimumUnit);
+          expect(res.body.result.name).to.be.equal(productUpdated.name);
+          expect(res.body.result.picture).to.be.equal(productUpdated.picture);
+          done();
+        });
+
+    });
+
+    it('Fail updating one product because doesnt have authorization', done => {
+
+      chai.request(app)
+        .put('/products/' + productId)
+        .send(productUpdated)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('PUT /products/:id/enabled', () => {
+
+    it('Update enabled product param of one product to false', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/enabled')
+        .set(auth)
+        .send({ enabled: false })
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.result.enabled).to.be.equal(false);
+          done();
+        });
+
+    });
+
+    it('Fail updating enabled product param of one product to false because unauthorized', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/enabled')
+        .send({ enabled: false })
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+  });
+
+  // PRICE PRODUCT
 
   describe('POST /products/price', () => {
 
@@ -336,6 +411,93 @@ describe('Product API routes', () => {
 
   });
 
+  describe('PUT /products/:id/prices/:indexPrice', () => {
+
+    it('Update one price product', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/prices/0')
+        .type('form')
+        .set(auth)
+        .send({
+          quantity: '1',
+          name: 'unidad',
+          items: 1,
+          price: 7.8,
+        })
+        .end((err, res) => {
+          expect(res).to.be.status(config.STATUS.OK);
+          expect(res.body.message).to.be.equal(config.RES.OK);
+          expect(res.body.result.prices[0].quantity).to.be.equal('1');
+          expect(res.body.result.prices[0].name).to.be.equal('unidad');
+          expect(res.body.result.prices[0].items).to.be.equal(1);
+          expect(res.body.result.prices[0].price).to.be.equal(7.8);
+          done();
+        });
+
+    });
+
+    it('Fail updating one price product because not authorization', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/prices/0')
+        .type('form')
+        .send({
+          quantity: '1',
+          name: 'unidad',
+          items: 1,
+          price: 7.8,
+        })
+        .end((err, res) => {
+          expect(res).to.be.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+    it('Fail updating one price product because lack some parameter', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/prices/0')
+        .type('form')
+        .set(auth)
+        .send({
+          quantity: '1',
+          name: 'docena',
+          price: 7.8,
+        })
+        .end((err, res) => {
+          expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+          expect(res.body.message).to.be.equal(config.RES.ERROR);
+          done();
+        });
+
+    });
+
+    it('Fail creating one price product because empty some parameter', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/prices/0')
+        .type('form')
+        .set(auth)
+        .send({
+          quantity: '',
+          name: '',
+          items: 1,
+          price: 7.8,
+        })
+        .end((err, res) => {
+          expect(res).to.be.status(config.STATUS.SERVER_ERROR);
+          expect(res.body.message).to.be.equal(config.RES.ERROR);
+          done();
+        });
+
+    });
+
+  });
+
+  // ENTRY PRODUCT
+
   describe('POST /products/entry', () => {
 
     it('Create one entry product', done => {
@@ -436,6 +598,62 @@ describe('Product API routes', () => {
         .get('/products/' + productId + '/entries')
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+  });
+
+  // Here all the routes of elimination for not to cause conflicts
+
+  describe('DELETE /products/:id/prices/:indexPrice', () => {
+
+    it('Fail delete price product, because not have authorization', done => {
+
+      chai.request(app)
+        .delete('/products/' + productId + '/prices/0')
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+    it('Delete price product', done => {
+
+      chai.request(app)
+        .delete('/products/' + productId + '/prices/0')
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          done();
+        });
+
+    });
+
+  });
+
+  describe('DELETE /products/:id', () => {
+
+    it('Fail delete product, because not have authorization', done => {
+
+      chai.request(app)
+        .delete('/products/' + productId)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+    it('Delete product', done => {
+
+      chai.request(app)
+        .delete('/products/' + productId)
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
           done();
         });
 

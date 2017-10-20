@@ -110,7 +110,9 @@ router.post(
       const priceProduct = queryProduct.prices[parseInt(product.priceIndex)].price;
       const totalPriceProduct = priceProduct * parseInt(product.quantity);
 
+      // Generate fields necessaries for sale.products
       products[index]['total'] = totalPriceProduct;
+      products[index]['price'] = queryProduct.prices[product.priceIndex].price;
       // Accumulative for the main total
       accumulativeTotalPrice += totalPriceProduct;
 

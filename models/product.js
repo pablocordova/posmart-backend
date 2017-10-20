@@ -3,6 +3,7 @@ const config = require('../config/products');
 
 var products_schema = mongoose.Schema({
   category: { type: String, enum: config.CATEGORIES, required: true },
+  enabled: { type: Boolean, default: true, required: true },
   minimumUnit: { type: String, enum: config.MINIMUM_PACKAGES, required: true },
   name: { type: String, unique: true, required: true },
   picture: { type: String },

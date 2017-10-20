@@ -5,6 +5,8 @@ config.RES = {
   ERROR: 'Error processing data',
   NOCREATED: 'Error trying to create item',
   OK: 'OK',
+  PRODUCT_MISSED: 'Product not found',
+  PRODUCT_SALES: 'Error trying deleting, Product already has sales',
   UNAUTHORIZED: 'You need permissions'
 };
 

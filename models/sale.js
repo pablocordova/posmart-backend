@@ -8,7 +8,7 @@ var sales_schema = mongoose.Schema({
     {
       quantity: { type: Number, required: true },
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-      priceIndex: { type: Number, required: true },
+      price: { type: Number, required: true },
       total: { type: Number, required: true }
     }
   ],
