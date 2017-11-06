@@ -35,7 +35,7 @@ router.post('/', (req, res) => {
   const isAlphanumericPass = validator.isAlphanumeric(user.password + '', config.PASSWORD_LOCAL);
 
   if (!isEmail || !isLengthUser || !isLengthPass || !isAlphanumericPass) {
-    return res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.NOCREATED });
+    return res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.INVALID_PARAMS });
   } else {
     user.save()
       .then((userCreated) => {

@@ -27,6 +27,7 @@ config.RES = {
   OK: 'OK',
   CREATED: 'User created',
   NOCREATED: 'Error to create user',
+  INVALID_PARAMS: 'Invalid params',
   USER_SALES: 'Error trying deleting, user already has sales',
 };
 
