@@ -269,6 +269,28 @@ router.get(
   }
 );
 
+router.get(
+  '/all/min_units',
+  passport.authenticate('jwt', { session: false }),
+  hasPermission, (req, res) => {
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK,
+      result: config.MINIMUM_PACKAGES
+    });
+  }
+);
+
+router.get(
+  '/all/categories',
+  passport.authenticate('jwt', { session: false }),
+  hasPermission, (req, res) => {
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK,
+      result: config.CATEGORIES
+    });
+  }
+);
+
 router.put('/:id', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
 
   Product.findById(req.params.id)
