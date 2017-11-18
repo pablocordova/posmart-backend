@@ -37,9 +37,10 @@ router.post('/', passport.authenticate('jwt', { session: false }), hasPermission
         result: productCreated
       });
     })
-    .catch(() => {
+    .catch((err) => {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.NOCREATED
+        message: config.RES.NOCREATED,
+        result: err
       });
     });
 
