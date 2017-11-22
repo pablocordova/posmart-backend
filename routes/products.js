@@ -420,12 +420,14 @@ router.delete(
 
       if (err) {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR,
+          result: product
         });
       }
 
       return res.status(config.STATUS.OK).send({
-        message: product
+        message: config.RES.DELETE_OK,
+        result: product
       });
 
     });

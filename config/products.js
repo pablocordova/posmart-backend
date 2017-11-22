@@ -6,8 +6,9 @@ config.RES = {
   NOCREATED: 'Error trying to create item',
   OK: 'OK',
   PRODUCT_MISSED: 'Product not found',
-  PRODUCT_SALES: 'Error trying deleting, Product already has sales',
-  UNAUTHORIZED: 'You need permissions'
+  PRODUCT_SALES: 'Error al borrar, producto ya tiene ventas',
+  UNAUTHORIZED: 'You need permissions',
+  DELETE_OK: 'Producto borrado correctamente!'
 };
 
 config.STATUS = {
