@@ -28,7 +28,9 @@ config.RES = {
   CREATED: 'User created',
   NOCREATED: 'Error to create user',
   INVALID_PARAMS: 'Invalid params',
-  USER_SALES: 'Error trying deleting, user already has sales',
+  USER_SALES: 'Error al borrar, usuario ya tiene ventas',
+  UNAUTHORIZED: 'You need permissions',
+  DELETE_OK: 'Usuario borrado correctamente!'
 };
 
 module.exports = config;

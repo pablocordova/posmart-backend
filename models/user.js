@@ -15,8 +15,7 @@ var user_schema = new mongoose.Schema({
     sales: { type: Boolean, default: false, required: true },
     settings: { type: Boolean, default: false, required: true },
     users: { type: Boolean, default: false, required: true }
-  },
-  type: { type: String, required: true }
+  }
 });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen

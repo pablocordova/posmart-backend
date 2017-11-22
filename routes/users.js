@@ -25,7 +25,7 @@ let hasPermission = (req, res, next) => {
 router.post('/', (req, res) => {
 
   // Check because maybe the user has any permission
-  if (req.body.permissions) req.body.permissions = JSON.parse(req.body.permissions);
+  //if (req.body.permissions) req.body.permissions = JSON.parse(req.body.permissions);
 
   let user = new User(req.body);
   // Validate params
@@ -94,7 +94,7 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), hasPermissi
 router.put('/:id', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
 
   // Check because maybe the user has any permission
-  if (req.body.permissions) req.body.permissions = JSON.parse(req.body.permissions);
+  //if (req.body.permissions) req.body.permissions = JSON.parse(req.body.permissions);
 
   // Validate params
   const isEmail = validator.isEmail(req.body.email + '');
@@ -192,12 +192,14 @@ router.delete(
 
       if (err) {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR,
+          result: user
         });
       }
 
       return res.status(config.STATUS.OK).send({
-        message: user
+        message: config.RES.DELETE_OK,
+        result: user
       });
 
     });
