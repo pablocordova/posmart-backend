@@ -73,7 +73,10 @@ router.post(
         product.entries.push(req.body);
         // Add to the general quantity and general unitCost
         product.quantity += parseInt(req.body.quantity);
-        product.unitCost = (product.unitCost + parseFloat(req.body.unitCost))/2;
+        product.unitCost = product.unitCost !== 0 ?
+          (product.unitCost + parseFloat(req.body.unitCost))/2 :
+          parseFloat(req.body.unitCost);
+
         product.save()
           .then((productUpdated) => {
             return res.status(config.STATUS.CREATED).send({
