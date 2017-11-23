@@ -1,5 +1,10 @@
 var config = new Object();
 
+config.TYPE_USERS = [
+  'DASHBOARD',
+  'APP'
+];
+
 // Validation
 config.USERNAME = {
   min: 2,

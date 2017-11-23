@@ -29,6 +29,12 @@ router.post('/', function (req, res) {
       });
     }
 
+    if (user.type !== req.body.type) {
+      return res.status(config.STATUS.SERVER_ERROR).send({
+        message: 'Incorrect credentials'
+      });
+    }
+
     if (user) {
       bcrypt.compare(req.body.password, user.password, (err, isMatch) => {
 

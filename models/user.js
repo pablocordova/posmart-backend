@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const config = require('../config/users');
 
 // Cost of processing the data in bcrypt - salt
 const saltRounds = 10;
@@ -15,7 +16,8 @@ var user_schema = new mongoose.Schema({
     sales: { type: Boolean, default: false, required: true },
     settings: { type: Boolean, default: false, required: true },
     users: { type: Boolean, default: false, required: true }
-  }
+  },
+  type: { type: String, enum: config.TYPE_USERS, required: true }
 });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen
