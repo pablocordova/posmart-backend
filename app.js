@@ -15,6 +15,7 @@ const customers = require('./routes/customers');
 const login = require('./routes/login');
 const products = require('./routes/products');
 const sales = require('./routes/sales');
+const settings = require('./routes/settings');
 const users = require('./routes/users');
 
 // Strategy for authentification
@@ -51,7 +52,12 @@ var app = express();
 
 // To use helmet
 app.use(helmet());
-
+/*
+app.use(helmet.frameguard({
+  action: 'allow-from',
+  domain: 'https://accounts.google.com'
+}));
+*/
 // Parsers for POST data
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -85,10 +91,10 @@ mongoose.connect(MONGO_PATH, { useMongoClient: true }, err => {
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Credentials', true);
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers',
-    'X-Requested-With,X-HTTP-Method-Override, Content-Type, Accept, Authorization');
+    'X-Requested-With,X-HTTP-Method-Override, Content-Type, Accept, Authorization, Origin');
   next();
 });
 
@@ -100,6 +106,7 @@ app.use('/customers', customers);
 app.use('/login', login);
 app.use('/products', products);
 app.use('/sales', sales);
+app.use('/settings', settings);
 app.use('/users', users);
 
 /**
