@@ -1,7 +1,6 @@
 const express = require('express');
 const moment = require('moment');
 const passport = require('passport');
-const validator = require('validator');
 const _ = require('lodash');
 
 const config = require('../config/sales');
@@ -31,7 +30,8 @@ router.post(
 
     const clientId = req.body.client;
 
-    let products = JSON.parse(req.body.products);
+    //let products = JSON.parse(req.body.products);
+    let products = req.body.products;
 
     // --- Validate all parameters  
 
@@ -73,7 +73,7 @@ router.post(
 
       // Check if all parameters exist
       const quantityIsEmpty = typeof product.quantity === 'undefined';
-      const priceIndexIsEmpty = typeof product.priceIndex === 'undefined';
+      const priceIndexIsEmpty = typeof product.price === 'undefined';
       const productIsEmpty = typeof product.product === 'undefined';
 
       if (quantityIsEmpty || priceIndexIsEmpty || productIsEmpty) {
@@ -90,19 +90,6 @@ router.post(
         });
       }
 
-      // Validate and find price
-      const priceIndexIsNumeric = validator.isNumeric(product.priceIndex + '');
-      const priceIndexInsideRange = priceIndexIsNumeric ? (
-        parseInt(product.priceIndex) >= 0 &&
-        parseInt(product.priceIndex) < queryProduct.prices.length
-      ) : false;
-
-      if (!priceIndexInsideRange) {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.BAD_PRICE_INDEX
-        });
-      }
-
       // Check inventory
       const unitsSale = parseInt(product.quantity) * queryProduct.prices[product.priceIndex].items;
       const quantityAfterSale = queryProduct.quantity - unitsSale;
@@ -112,12 +99,14 @@ router.post(
         });
       }
 
-      const priceProduct = queryProduct.prices[parseInt(product.priceIndex)].price;
+      //const priceProduct = queryProduct.prices[parseInt(product.priceIndex)].price;
+      const priceProduct = parseFloat(product.price);
       const totalPriceProduct = priceProduct * parseInt(product.quantity);
 
       // Generate fields necessaries for sale.products
       products[index]['total'] = totalPriceProduct;
-      products[index]['price'] = queryProduct.prices[product.priceIndex].price;
+      //products[index]['price'] = queryProduct.prices[product.priceIndex].price;
+      products[index]['price'] = parseFloat(product.priceIndex);
       // Accumulative for the main total
       accumulativeTotalPrice += totalPriceProduct;
 
