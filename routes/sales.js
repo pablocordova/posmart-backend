@@ -51,6 +51,10 @@ router.post(
     }
 
     // Check if exist duplicate values, never need to repeat productId an priceIndex together
+    // I will comment this, because maybe really do exit the same product with same priceIndex
+    // But with differents discounts, for now It will be commented
+
+    /*
     let withoutDuplicates = _.uniqBy(products, elem => {
       return [ elem.product, elem.priceIndex ].join();
     });
@@ -60,6 +64,7 @@ router.post(
         message: config.RES.PRODUCTS_DUPLICATED
       });
     }
+    */
 
     let accumulativeTotalPrice = 0;
     let tempProducts = [];
