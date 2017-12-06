@@ -2,26 +2,50 @@ const express = require('express');
 const google = require('googleapis');
 const moment = require('moment');
 const passport = require('passport');
-const axios = require('axios');
-
+let promise = require('bluebird');
 const router = express.Router();
-const config = require('../config/customers');
+const request = require('request');
+const _ = require('lodash');
 
+const config = require('../config/settings');
+const Customer = require('../models/customer');
+const Product = require('../models/product');
+const Sale = require('../models/sale');
+const User = require('../models/user');
 const Setting = require('../models/setting');
 
 var OAuth2 = google.auth.OAuth2;
-const redirect_url = 'http://localhost:3001/setting';
+const redirect_url = process.env.GCP_REDIRECT_URL;
 var oauth2Client = new OAuth2(
-  '193086894675-510ggki4pbe16ntvmuhqotr3bojhte96.apps.googleusercontent.com',
-  'OUG7KOIqd_mV1517jEwAkMku',
+  process.env.GOOGLE_API_CLIENT_ID,
+  process.env.GOOGLE_API_CLIENT_SECRET,
   redirect_url
 );
+
+// Configuration ticket printer
 const printerID = 'bfeafc3e-9eaf-0709-5f42-20866d29b063';
-const printerProxy = 'D0E6B1C4-4B63-489B-96B7-3051A1821BAF';
+
+const ticketProperties = {
+  'version':'1.0',
+  'print':{
+    'copies':{
+      'copies':1
+    },
+    'page_orientation':{
+      'type':0
+    },
+    'margins': {
+      'top_microns':0,
+      'bottom_microns':0,
+      'left_microns':0,
+      'right_microns':0
+    }
+  }
+};
 
 var url = oauth2Client.generateAuthUrl({
   access_type: 'offline',
-  scope: 'https://www.googleapis.com/auth/cloudprint'
+  scope: config.URL_GCP
 });
 
 // My middleware to check permissions
@@ -84,139 +108,158 @@ router.post(
   }
 );
 
-/*
-router.post(
-  '/print',
-  passport.authenticate('jwt', { session: false }),
-  haspermission,
-  (req, res) => {
-*/
+
 router.post(
   '/print/sale',
+  passport.authenticate('jwt', { session: false }),
+  haspermission,
   async (req, res) => {
 
-    //const saleID = req.body.saleID;
-    const tickeProperties = {
-      'version': '1.0',
-      'print': {
-        'vendor_ticket_item': [],
-        'color': { 'type': 'STANDARD_MONOCHROME' },
-        'copies': { 'copies': 1 }
-      }
+    const saleID = req.body.saleID;
+
+    const accessToken = await getTokenGoogleUpdated();
+
+    let sale = await Sale.findById(saleID);
+    const htmlToPrint = await generateHTMLSale(sale);
+
+    var formData = {
+      printerid : printerID,
+      title: 'pdf print',
+      ticket: JSON.stringify(ticketProperties),
+      content: htmlToPrint,
+      contentType: 'text/html'
     };
 
-    // First I'll check if printer is available and with also I'll get the xsrf-token
-    const accessToken = await getTokenGoogleUpdated();
-    //console.log('printing access token google');
-    //console.log(accessToken);
-    //return getPrinterInfo(res, accessToken);
-    axios.get(
-      'https://www.google.com/cloudprint/submit',
+    request.post(
       {
-        params: {
-          printerid : printerID,
-          title: 'title printer',
-          ticket: tickeProperties,
-          content : 'to test jejejje pleaseeee',
-          contentType: 'text/plain'
-        },
+        url:'https://www.google.com/cloudprint/submit',
+        formData: formData,
         headers: {
           'Authorization': 'Bearer ' + accessToken
         }
-
+      },
+      function optionalCallback(err, httpResponse, body) {
+        if (err) {
+          console.error('upload failed:', err);
+          return res.status(config.STATUS.SERVER_ERROR).send({
+            message: config.RES.ERROR,
+            result: err
+          });
+        } else {
+          console.log('Upload successful!  Server responded with:', body);
+          return res.status(config.STATUS.OK).send({
+            message: config.RES.PRINTING,
+            printed: body.success
+          });
+        }
       }
-
-    )
-      .then(response => {
-        console.log('google cloud print document');
-        return res.status(config.STATUS.OK).send({
-          result: response.data,
-          message: config.RES.OK,
-        });
-      })
-      .catch(err => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          result: err,
-          message: config.RES.ERROR,
-        });
-      });
+    );
 
   }
 );
 
+async function generateHTMLSale(sale) {
+  // Get data seller
+  const dataSeller = await User.findById(sale.seller);
+  // Get data customer
+  const dataClient = await Customer.findById(sale.client);
+
+  let hour = moment(sale.date).format('hh:mm:ss a');
+  let day = moment(sale.date).format('DD/MM/YY');
+
+  const separator = '<div>-----------------------------------------------</div>';
+  const title = '<h2 style="text-align:center;">COMERCIAL KYN</h2>';
+  const address = '<div>Jr Agusto Beleguia 233 El progreso Carabayllo</div>';
+  const phone = '<div>Telf: 982251795</div>';
+  const seller = '<div>Vendedor: ' + dataSeller.username + '</div>';
+  const date = '<div>Fecha: ' + day + ' Hora: ' + hour + '</div>';
+  const customer = '<div>Cliente: ' + dataClient.firstname + '</div>';
+
+  let saleProduct = '';
+
+  for (let product of sale.products) {
+    // Get data about the product
+    const dataProduct = await Product.findById(product.product);
+    const items = dataProduct.prices[parseInt(product.price)].items;
+    const unitPrice = _.round(product.total/(items * product.quantity), 2);
+
+    saleProduct +=
+    '<tr>' +
+      '<td>'+ product.quantity + ' ' + product.unit.substring(0, 3) + '</td>' +
+      '<td>'+ dataProduct.name + '</td>' +
+      '<td>'+ unitPrice+ '</td>' +
+      '<td>'+ product.total + '</td>' +
+    '</tr>';
+  }
+
+  const saleTable =
+  '<table>' +
+    '<tr>' +
+      '<th>Cant.</th>' +
+      '<th>Descripcion</th>' +
+      '<th>P.Unit</th>' +
+      '<th>Total</th>' +
+    '</tr>' +
+    saleProduct +
+  '</table>';
+
+  const total = '<h3 style="text-align:right;">TOTAL: S./' + sale.total + '</h3>';
+
+  return (
+    title +
+    address +
+    phone +
+    separator +
+    seller +
+    date +
+    customer +
+    separator +
+    saleTable +
+    total
+  );
+}
+
 async function getTokenGoogleUpdated() {
 
-  return await Setting.find({})
-    .then(async setting => {
-      const refreshTokenGoogle = setting[0].refreshTokenGoogle;
-      const expirationTokenGoogle = setting[0].expirationTokenGoogle;
-      const tokenGoogle = setting[0].tokenGoogle;
+  let query = Setting.find({});
+  const setting = await query.exec();
 
-      const dateToday = new Date();
-      // 1 minute forward to avoid exact time
-      const dateTodayPlus1Minute = moment(dateToday).add(1, 'm').toDate();
+  const refreshTokenGoogle = setting[0].refreshTokenGoogle;
+  const expirationTokenGoogle = setting[0].expirationTokenGoogle;
+  const tokenGoogle = setting[0].tokenGoogle;
 
-      const dateExpiration = new Date(expirationTokenGoogle);
+  const dateToday = new Date();
+  // 1 minute forward to avoid exact time
+  const dateTodayPlus1Minute = moment(dateToday).add(1, 'm').toDate();
+  const dateExpiration = new Date(expirationTokenGoogle);
 
-      console.log('Important data to nalize');
-      console.log(dateExpiration);
-      console.log(dateTodayPlus1Minute);
+  console.log('Important data to nalize');
+  console.log(dateExpiration);
+  console.log(dateTodayPlus1Minute);
 
-      // Case date expiration, get new token
-      if (dateExpiration < dateTodayPlus1Minute) {
-        console.log('Updating access token');
-        oauth2Client.credentials['refresh_token'] = refreshTokenGoogle;
-        return await oauth2Client.refreshAccessToken( async function(err, tokens) {
+  // Case date expiration, get new token
+  if (dateExpiration < dateTodayPlus1Minute) {
+    console.log('Updating access token');
+    oauth2Client.credentials['refresh_token'] = refreshTokenGoogle;
+    // Is necessary convert callback to promise to make await the answer
+    return new promise(resolve => {
+      return oauth2Client.refreshAccessToken(
+        function(err, tokens) {
           // Save new token and new expiration
-          //let setting = new Setting();
           setting[0].expirationTokenGoogle = tokens.expiry_date;
           setting[0].tokenGoogle = tokens.access_token;
 
-          await setting[0].save();
-
-          //return getPrinterInfo(res, tokens.access_token);
-          return tokens.access_token;
-        });
-
-      } else {
-        console.log('Using old access token');
-        //return getPrinterInfo(res, tokenGoogle);
-        return tokenGoogle;
-      }
-
-    })
-    .catch(err => {
-      console.log(err);
+          setting[0].save();
+          console.log('inside callback hell');
+          console.log(tokens.access_token);
+          resolve(tokens.access_token);
+        }
+      );
     });
-
-}
-
-function getPrinterInfo(res, accessToken) {
-
-  axios.get(
-    'https://www.google.com/cloudprint/list',
-    {
-      params: {
-        proxy: printerProxy
-      },
-      headers: {
-        'Authorization': 'Bearer ' + accessToken
-      }
-    }
-  )
-    .then(response => {
-      console.log('response of google cloud print');
-      return res.status(config.STATUS.OK).send({
-        result: response.data,
-        message: config.RES.OK,
-      });
-    })
-    .catch(err => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        result: err,
-        message: config.RES.ERROR,
-      });
-    });
+  } else {
+    console.log('Using old access token');
+    return tokenGoogle;
+  }
 
 }
 
