@@ -101,7 +101,7 @@ router.post(
 
       //const priceProduct = queryProduct.prices[parseInt(product.priceIndex)].price;
       const priceProduct = parseFloat(product.price);
-      const totalPriceProduct = priceProduct * parseInt(product.quantity);
+      const totalPriceProduct = priceProduct * parseFloat(product.quantity);
 
       // Generate fields necessaries for sale.products
       products[index]['total'] = _.round(totalPriceProduct, 1);
