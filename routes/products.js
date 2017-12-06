@@ -55,7 +55,7 @@ router.post(
     const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
     const unitCostIsEmpty = validator.isEmpty(req.body.unitCost + '');
     const productIsEmpty = validator.isEmpty(req.body.product + '');
-    const quantityIsNumeric = validator.isNumeric(req.body.quantity + '');
+    const quantityIsNumeric = validator.isDecimal(req.body.quantity + '');
     const unitCostIsDecimal = validator.isDecimal(req.body.unitCost + '');
     const arePositives = req.body.quantity >= 0 && req.body.unitCost >= 0;
 
@@ -72,7 +72,7 @@ router.post(
         req.body.date = moment();
         product.entries.push(req.body);
         // Add to the general quantity and general unitCost
-        product.quantity += parseInt(req.body.quantity);
+        product.quantity += parseFloat(req.body.quantity);
         product.unitCost = product.unitCost !== 0 ?
           (product.unitCost + parseFloat(req.body.unitCost))/2 :
           parseFloat(req.body.unitCost);
