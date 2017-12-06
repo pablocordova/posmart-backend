@@ -149,7 +149,7 @@ router.post(
           console.log('Upload successful!  Server responded with:', body);
           return res.status(config.STATUS.OK).send({
             message: config.RES.PRINTING,
-            printed: body.success
+            printed: 'OK'
           });
         }
       }
