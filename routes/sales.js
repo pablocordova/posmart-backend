@@ -91,7 +91,9 @@ router.post(
       }
 
       // Check inventory
-      const unitsSale = parseInt(product.quantity) * queryProduct.prices[product.priceIndex].items;
+      const unitsSale = parseFloat(product.quantity) *
+        queryProduct.prices[product.priceIndex].items;
+
       const quantityAfterSale = queryProduct.quantity - unitsSale;
       if (quantityAfterSale < 0) {
         return res.status(config.STATUS.SERVER_ERROR).send({
