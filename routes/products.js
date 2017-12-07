@@ -3,6 +3,7 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const validator = require('validator');
+const _ = require('lodash');
 
 const router = express.Router();
 const config = require('../config/products');
@@ -71,11 +72,20 @@ router.post(
 
         req.body.date = moment();
         product.entries.push(req.body);
+
         // Add to the general quantity and general unitCost
-        product.quantity += parseFloat(req.body.quantity);
+
+        const quantity = parseFloat(req.body.quantity);
+        const unitCost = parseFloat(req.body.unitCost);
+
         product.unitCost = product.unitCost !== 0 ?
-          (product.unitCost + parseFloat(req.body.unitCost))/2 :
-          parseFloat(req.body.unitCost);
+          _.round(
+            ((product.quantity * product.unitCost) + (unitCost * quantity)) /
+            (product.quantity + quantity), 2
+          ) :
+          parseFloat(unitCost);
+
+        product.quantity += quantity;
 
         product.save()
           .then((productUpdated) => {
