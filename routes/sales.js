@@ -1,5 +1,6 @@
 const express = require('express');
 const moment = require('moment');
+const mongoose = require('mongoose');
 const passport = require('passport');
 const _ = require('lodash');
 
@@ -201,5 +202,65 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), haspermissi
     });
 
 });
+
+router.get(
+  '/byid/:id',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    // For now, but I need to found a better way
+    const wholeSales = await Sale.aggregate({
+      $project: {
+        id: '$_id'
+      }
+    });
+
+    let idSaleFound = '';
+
+    for (let sale of wholeSales) {
+      if (String(sale.id).substring(0, 8) === req.params.id) {
+        idSaleFound = sale.id;
+        break;
+      }
+    }
+
+    Sale.findById(idSaleFound)
+      .then(sale => {
+        return res.status(config.STATUS.OK).send({
+          result: sale,
+          message: config.RES.OK
+        });
+      })
+      .catch(err => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: err
+        });
+      });
+
+  }
+);
+
+router.get(
+  '/last/10',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, (req, res) =>
+  {
+    Sale.find({}).sort({ 'date': -1 }).limit(10)
+      .then(sales => {
+        return res.status(config.STATUS.OK).send({
+          result: sales,
+          message: config.RES.OK
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
+        });
+      });
+
+  }
+);
 
 module.exports = router;
