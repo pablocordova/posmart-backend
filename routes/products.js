@@ -421,11 +421,18 @@ router.delete(
   hasPermission, async (req, res) => {
 
     // First check if products already has sales
-    const sales = await Sale.find({ 'products.$.product': req.params.id });
+    const sales = await Sale.aggregate(
+      {
+        $match: {
+          'products.product': mongoose.Types.ObjectId(req.params.id),
+        }
+      }
+    );
 
     if (sales.length > 0) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.PRODUCT_SALES
+      return res.status(config.STATUS.OK).send({
+        message: config.RES.PRODUCT_SALES,
+        result: 'ERROR'
       });
     }
 
@@ -444,7 +451,6 @@ router.delete(
       });
 
     });
-
 
   }
 );
