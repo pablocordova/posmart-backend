@@ -182,7 +182,8 @@ async function generateHTMLSale(sale) {
   for (let product of sale.products) {
     // Get data about the product
     const dataProduct = await Product.findById(product.product);
-    const items = dataProduct.prices[parseInt(product.price)].items;
+    //const items = dataProduct.prices[parseInt(product.price)].items;
+    const items = product.unitsInPrice;
     const unitPrice = _.round(product.total/(items * product.quantity), 2);
 
     saleProduct +=

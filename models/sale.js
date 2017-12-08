@@ -10,6 +10,7 @@ var sales_schema = mongoose.Schema({
       unit: { type: String, required: true },
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
       price: { type: Number, required: true },
+      unitsInPrice: { type: Number, required: true },
       total: { type: Number, required: true }
     }
   ],

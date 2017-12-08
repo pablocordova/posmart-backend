@@ -92,21 +92,25 @@ router.post(
       }
 
       // Check inventory
-      const unitsSale = parseFloat(product.quantity) *
-        queryProduct.prices[product.priceIndex].items;
+      //const unitsSale = parseFloat(product.quantity) *
+      //  queryProduct.prices[product.priceIndex].items;
+      const unitsSale = parseFloat(product.quantity) * product.unitsInPrice;
 
       const quantityAfterSale = queryProduct.quantity - unitsSale;
+      // For now, restriction about inventory is suspended x 1
+      /*
       if (quantityAfterSale < 0) {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.NOINVENTORY + queryProduct.name
         });
       }
-
+      */
       const totalPriceProduct = product.total;
 
       // Generate fields necessaries for sale.products
       products[index]['total'] = _.round(totalPriceProduct, 1);
       //products[index]['price'] = queryProduct.prices[product.priceIndex].price;
+      // TODO: DELETE THE NEXT FIELD 'PRICE' IN UNNECESSARY
       products[index]['price'] = parseFloat(product.priceIndex);
       // Accumulative for the main total
       accumulativeTotalPrice += totalPriceProduct;
@@ -119,11 +123,14 @@ router.post(
       if (indexTemp >= 0) {
         tempProducts[indexTemp].quantity -= unitsSale;
         // Also check the inventory
+        // For now, restriction about inventory is suspended x 2
+        /*
         if (tempProducts[indexTemp].quantity < 0) {
           return res.status(config.STATUS.SERVER_ERROR).send({
             message: config.RES.NOINVENTORY + queryProduct.name
           });
         }
+        */
       } else {
         // Save temporarily inventory and products id
         queryProduct.quantity = quantityAfterSale;
@@ -328,7 +335,8 @@ router.get(
             quantity: '$products.quantity',
             measure: '$products.unit',
             indexPrice: '$products.price',
-            total: '$products.total'
+            total: '$products.total',
+            unitsInPrice: '$products.unitsInPrice'
           }
 
         }
