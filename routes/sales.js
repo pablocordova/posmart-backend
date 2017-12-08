@@ -102,9 +102,7 @@ router.post(
         });
       }
 
-      //const priceProduct = queryProduct.prices[parseInt(product.priceIndex)].price;
-      const priceProduct = parseFloat(product.price);
-      const totalPriceProduct = priceProduct * parseFloat(product.quantity);
+      const totalPriceProduct = product.total;
 
       // Generate fields necessaries for sale.products
       products[index]['total'] = _.round(totalPriceProduct, 1);
@@ -204,7 +202,7 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), haspermissi
 });
 
 router.get(
-  '/byid/:id',
+  '/bypartialid/:id',
   passport.authenticate('jwt', { session: false }),
   haspermission, async (req, res) =>
   {
@@ -259,6 +257,109 @@ router.get(
           message: config.RES.ERROR
         });
       });
+
+  }
+);
+
+router.get(
+  '/processed/:id',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) => {
+
+    let sales = await Sale.aggregate(
+      {
+        $match: {
+          _id: mongoose.Types.ObjectId(req.params.id)
+        }
+      },
+      {
+        $lookup:
+          {
+            from: 'users',
+            localField: 'seller',
+            foreignField: '_id',
+            as: 'seller'
+          }
+      },
+      {
+        $lookup:
+          {
+            from: 'customers',
+            localField: 'client',
+            foreignField: '_id',
+            as: 'client'
+          }
+      },
+      {
+        $unwind: '$products'
+      },
+      {
+        $lookup:
+          {
+            from: 'products',
+            localField: 'products.product',
+            foreignField: '_id',
+            as: 'products.product'
+          }
+      },
+      {
+        $unwind: '$seller'
+      },
+      {
+        $unwind: '$client'
+      },
+      {
+        $unwind: '$products.product'
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          seller: '$seller.username',
+          date: 1,
+          client: {
+            id: '$client._id',
+            name: '$client.firstname'
+          },
+          product: {
+            id: '$products.product._id',
+            name: '$products.product.name',
+            prices: '$products.product.prices',
+            quantity: '$products.quantity',
+            measure: '$products.unit',
+            indexPrice: '$products.price',
+            total: '$products.total'
+          }
+
+        }
+      },
+      {
+        $group: {
+          _id: '$_id',
+          total: {
+            $first: '$total'
+          },
+          seller: {
+            $first: '$seller'
+          },
+          date: {
+            $first: '$date'
+          },
+          client: {
+            $first: '$client'
+          },
+          products: {
+            $addToSet: '$product'
+          }
+        }
+      }
+
+    );
+
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK,
+      result: sales[0]
+    });
 
   }
 );
