@@ -24,7 +24,7 @@ var products_schema = mongoose.Schema({
       unitCost: { type: Number }
     }
   ]
-});
+}, { usePushEach: true });
 
 const product = mongoose.model('Product', products_schema);
 

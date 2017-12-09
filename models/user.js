@@ -18,7 +18,7 @@ var user_schema = new mongoose.Schema({
     users: { type: Boolean, default: false, required: true }
   },
   type: { type: String, enum: config.TYPE_USERS, required: true }
-});
+}, { usePushEach: true });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen
 user_schema.pre('save', function(next) {
