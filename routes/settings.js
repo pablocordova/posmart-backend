@@ -171,7 +171,7 @@ async function generateHTMLSale(sale) {
   const separator = '<div>-----------------------------------------------</div>';
   const title = '<h2 style="text-align:center;">COMERCIAL KYN</h2>';
   const address = '<div>Jr Agusto Beleguia 233 El progreso Carabayllo</div>';
-  const phone = '<div>Telf: 982251795</div>';
+  const phone = '<div>Telf: 947298613</div>';
   const code = '<div>ID: ' + String(sale._id).substring(0, 8) + '</div>';
   const seller = '<div>Vendedor: ' + dataSeller.username + '</div>';
   const date = '<div>Fecha: ' + day + ' Hora: ' + hour + '</div>';
