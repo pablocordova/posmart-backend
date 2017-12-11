@@ -169,13 +169,14 @@ async function generateHTMLSale(sale) {
   let day = moment(sale.date).format('DD/MM/YY');
 
   const separator = '<div>-----------------------------------------------</div>';
-  const title = '<h2 style="text-align:center;">COMERCIAL KYN</h2>';
+  const title = '<h2 style="text-align:center;">INVERSIONES KARINA</h2>';
   const address = '<div>Jr Agusto Beleguia 233 El progreso Carabayllo</div>';
-  const phone = '<div>Telf: 947298613</div>';
+  const phone = '<div>Telf: 985467049 / 947298613</div>';
   const code = '<div>ID: ' + String(sale._id).substring(0, 8) + '</div>';
   const seller = '<div>Vendedor: ' + dataSeller.username + '</div>';
   const date = '<div>Fecha: ' + day + ' Hora: ' + hour + '</div>';
   const customer = '<div>Cliente: ' + dataClient.firstname + '</div>';
+  const footer = '<div>Gracias por su preferencia</div>';
 
   let saleProduct = '';
 
@@ -219,7 +220,8 @@ async function generateHTMLSale(sale) {
     customer +
     separator +
     saleTable +
-    total
+    total +
+    footer
   );
 }
 
