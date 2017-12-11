@@ -56,7 +56,8 @@ config.CATEGORIES = [
   'Suavizantes de ropa',
   'Toallas femeninas',
   'Velas',
-  'Yogurt'
+  'Yogurt',
+  'Otros'
 ];
 
 module.exports = config;
