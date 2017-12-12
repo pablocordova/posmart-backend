@@ -170,7 +170,7 @@ async function generateHTMLSale(sale) {
 
   const separator = '<div>-----------------------------------------------</div>';
   const title = '<h2 style="text-align:center;">INVERSIONES KARINA</h2>';
-  const address = '<div>Jr Agusto Beleguia 233 El progreso Carabayllo</div>';
+  const address = '<div>Jr Agusto Beleguia 212 El progreso Carabayllo</div>';
   const phone = '<div>Telf: 985467049 / 947298613</div>';
   const code = '<div>ID: ' + String(sale._id).substring(0, 8) + '</div>';
   const seller = '<div>Vendedor: ' + dataSeller.username + '</div>';
@@ -187,10 +187,18 @@ async function generateHTMLSale(sale) {
     const items = product.unitsInPrice;
     const unitPrice = _.round(product.total/(items * product.quantity), 2);
 
+    let itemsInDescription = '';
+    if (items != 1) {
+      itemsInDescription =
+        ' x' +
+        String(items) +
+        dataProduct.minimumUnit.substring(0, 3).toLowerCase();
+    }
+
     saleProduct +=
     '<tr>' +
       '<td>'+ product.quantity + ' ' + product.unit.substring(0, 3) + '</td>' +
-      '<td>'+ dataProduct.name + '</td>' +
+      '<td>'+ dataProduct.name + itemsInDescription + '</td>' +
       '<td>'+ unitPrice+ '</td>' +
       '<td>'+ product.total + '</td>' +
     '</tr>';
