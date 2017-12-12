@@ -150,7 +150,7 @@ router.post(
     let sale = new Sale();
 
     sale.client = clientId;
-    sale.date = moment().subtract(5, 'hours');
+    sale.date = moment();
     sale.products = products;
     sale.seller = req.user._id;
     sale.subtotal = _.round(accumulativeTotalPrice/(1 + config.IGV), 2);
