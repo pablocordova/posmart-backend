@@ -118,7 +118,7 @@ router.post(
 
     const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
     const nameIsEmpty = validator.isEmpty(req.body.name + '');
-    const itemsIsNumeric = validator.isNumeric(req.body.items + '');
+    const itemsIsNumeric = validator.isDecimal(req.body.items + '');
     const priceIsDecimal = validator.isDecimal(req.body.price + '');
 
     if ( quantityIsEmpty || nameIsEmpty || !itemsIsNumeric || !priceIsDecimal) {
