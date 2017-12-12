@@ -197,15 +197,17 @@ async function generateHTMLSale(sale) {
 
     saleProduct +=
     '<tr>' +
-      '<td>'+ product.quantity + ' ' + product.unit.substring(0, 3) + '</td>' +
+      '<td style="text-align:center;">'+
+        product.quantity + ' ' + product.unit.substring(0, 3) +
+      '</td>' +
       '<td>'+ dataProduct.name + itemsInDescription + '</td>' +
-      '<td>'+ unitPrice+ '</td>' +
-      '<td>'+ product.total + '</td>' +
+      '<td style="text-align:center;">'+ unitPrice+ '</td>' +
+      '<td style="text-align:center;">'+ product.total + '</td>' +
     '</tr>';
   }
 
   const saleTable =
-  '<table>' +
+  '<table style="width:100%;">' +
     '<tr>' +
       '<th>Cant.</th>' +
       '<th>Descripcion</th>' +
@@ -218,6 +220,7 @@ async function generateHTMLSale(sale) {
   const total = '<h3 style="text-align:right;">TOTAL: S./' + sale.total + '</h3>';
 
   return (
+    '<div style="font-size:80%;">' +
     title +
     address +
     phone +
@@ -229,7 +232,8 @@ async function generateHTMLSale(sale) {
     separator +
     saleTable +
     total +
-    footer
+    footer +
+    '</div>'
   );
 }
 
