@@ -70,7 +70,7 @@ router.post(
     Product.findById(req.body.product)
       .then(product => {
 
-        req.body.date = moment();
+        req.body.date = moment().subtract(5, 'hours');
         product.entries.push(req.body);
 
         // Add to the general quantity and general unitCost
