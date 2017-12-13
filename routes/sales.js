@@ -174,6 +174,90 @@ router.post(
   }
 );
 
+router.post(
+  '/search/advanced',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    let sales = await Sale.aggregate(
+      {
+        $lookup:
+          {
+            from: 'users',
+            localField: 'seller',
+            foreignField: '_id',
+            as: 'seller'
+          }
+      },
+      {
+        $lookup:
+          {
+            from: 'customers',
+            localField: 'client',
+            foreignField: '_id',
+            as: 'client'
+          }
+      },
+      {
+        $unwind: '$seller'
+      },
+      {
+        $unwind: '$client'
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          seller: '$seller.username',
+          state: 1,
+          date: 1,
+          client: '$client.firstname'
+        }
+      }
+    );
+
+    // Filter
+
+    if (req.body.id !== '') {
+      sales = await sales.filter(sale => {
+        return String(sale._id).substring(0, 8) === req.body.id;
+      });
+    }
+
+    if (req.body.day !== '') {
+      sales = await sales.filter(sale => {
+        const day = String(moment.utc(sale.date).format('YYYY-MM-DD'));
+        return day === req.body.day;
+      });
+    }
+
+    if (req.body.seller !== '') {
+      sales = await sales.filter(sale => {
+        return sale.seller === req.body.seller;
+      });
+    }
+
+    if (req.body.state !== '' && req.body.state !== 'all') {
+      sales = await sales.filter(sale => {
+        return sale.state === req.body.state;
+      });
+    }
+
+    if (req.body.total !== '') {
+      sales = await sales.filter(sale => {
+        return String(sale.total) === req.body.total;
+      });
+    }
+
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK,
+      result: sales
+    });
+
+  }
+);
+
 router.get('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   Sale.find({})
