@@ -207,7 +207,7 @@ async function generateHTMLSale(sale) {
   }
 
   const saleTable =
-  '<table style="width:100%;font-size:80%;">' +
+  '<table style="width:100%;font-size:90%;">' +
     '<tr>' +
       '<th>Cant.</th>' +
       '<th>Descripcion</th>' +
