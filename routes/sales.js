@@ -30,6 +30,7 @@ router.post(
   async (req, res) => {
 
     const clientId = req.body.client;
+    const state = req.body.state;
 
     //let products = JSON.parse(req.body.products);
     let products = req.body.products;
@@ -150,6 +151,7 @@ router.post(
     let sale = new Sale();
 
     sale.client = clientId;
+    sale.state = state;
     sale.date = moment().subtract(5, 'hours');
     sale.products = products;
     sale.seller = req.user._id;
