@@ -17,7 +17,7 @@ var sales_schema = mongoose.Schema({
   seller: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   subtotal: { type: Number, required: true },
   total: { type: Number, required: true },
-  state: { type: String, required: true, default: 'pending' }
+  state: { type: String, required: true }
 }, { usePushEach: true });
 
 const sale = mongoose.model('Sale', sales_schema);
