@@ -139,7 +139,11 @@ router.post(
           }
         }
 
-        product.prices.push(req.body);
+        let arrayProductPrices = product.prices;
+        arrayProductPrices.push(req.body);
+        // Sort prices
+        product.prices =  _.sortBy(arrayProductPrices, 'items');
+
         product.save()
           .then((priceCreated) => {
             return res.status(config.STATUS.CREATED).send({

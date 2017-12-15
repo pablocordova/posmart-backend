@@ -32,7 +32,6 @@ router.post(
     const clientId = req.body.client;
     const state = req.body.state;
 
-    //let products = JSON.parse(req.body.products);
     let products = req.body.products;
 
     // --- Validate all parameters  
@@ -75,10 +74,9 @@ router.post(
 
       // Check if all parameters exist
       const quantityIsEmpty = typeof product.quantity === 'undefined';
-      const priceIndexIsEmpty = typeof product.price === 'undefined';
       const productIsEmpty = typeof product.product === 'undefined';
 
-      if (quantityIsEmpty || priceIndexIsEmpty || productIsEmpty) {
+      if (quantityIsEmpty || productIsEmpty) {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.NOPARAMETER
         });
@@ -93,8 +91,6 @@ router.post(
       }
 
       // Check inventory
-      //const unitsSale = parseFloat(product.quantity) *
-      //  queryProduct.prices[product.priceIndex].items;
       const unitsSale = parseFloat(product.quantity) * product.unitsInPrice;
 
       const quantityAfterSale = queryProduct.quantity - unitsSale;
@@ -110,9 +106,6 @@ router.post(
 
       // Generate fields necessaries for sale.products
       products[index]['total'] = _.round(totalPriceProduct, 1);
-      //products[index]['price'] = queryProduct.prices[product.priceIndex].price;
-      // TODO: DELETE THE NEXT FIELD 'PRICE' IN UNNECESSARY
-      products[index]['price'] = parseFloat(product.priceIndex);
       // Accumulative for the main total
       accumulativeTotalPrice += totalPriceProduct;
 
