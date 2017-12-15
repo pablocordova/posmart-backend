@@ -260,6 +260,45 @@ router.post(
   }
 );
 
+router.post(
+  '/:id/credits',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    let sale = await Sale.findById(req.params.id);
+
+    let credits = [];
+    if (sale.credits) {
+      credits = sale.credits;
+    }
+
+    let credit = {
+      date: req.body.date,
+      amount: req.body.amount
+    };
+
+    credits.push(credit);
+
+    sale.credits = credits;
+
+    sale.save()
+      .then((saleUpdated) => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: saleUpdated
+        });
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: err
+        });
+      });
+
+  }
+);
+
 router.get('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
   Sale.find({})
@@ -293,6 +332,28 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), haspermissi
     });
 
 });
+
+router.get(
+  '/:id/credits',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    Sale.findById(req.params.id)
+      .then(sale => {
+        return res.status(config.STATUS.OK).send({
+          result: sale.credits,
+          message: config.RES.OK
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
+        });
+      });
+
+  }
+);
 
 router.get(
   '/bypartialid/:id',
@@ -410,6 +471,7 @@ router.get(
           total: 1,
           seller: '$seller.username',
           date: 1,
+          state: 1,
           client: {
             id: '$client._id',
             name: '$client.firstname'
@@ -444,6 +506,9 @@ router.get(
           },
           products: {
             $addToSet: '$product'
+          },
+          state: {
+            $first: '$state'
           }
         }
       }
@@ -454,6 +519,63 @@ router.get(
       message: config.RES.OK,
       result: sales[0]
     });
+
+  }
+);
+
+router.put(
+  '/:id/state',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    Sale.findByIdAndUpdate(
+      req.params.id,
+      { state: req.body.state },
+      { new: true },
+      (err, saleUpdated) => {
+
+        if (err) {
+          return res.status(config.STATUS.SERVER_ERROR).send({
+            message: config.RES.ERROR,
+            result: err
+          });
+        }
+
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: saleUpdated
+        });
+
+      }
+    );
+
+  }
+);
+
+router.delete(
+  '/:id/credits/:indexCredit',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) => {
+
+    // First check if products already has sales
+    let sale = await Sale.findById(req.params.id);
+
+    // Remove specific array element
+    sale.credits.splice(req.params.indexCredit, 1);
+
+    sale.save()
+      .then((saleUpdated) => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: saleUpdated
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
+        });
+      });
 
   }
 );
