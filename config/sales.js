@@ -14,7 +14,8 @@ config.RES = {
   NOPRODUCTS: 'There are not at least 1 product',
   OK: 'OK',
   PRODUCTS_DUPLICATED: 'There are one o more products duplicated',
-  UNAUTHORIZED: 'You need permissions'
+  UNAUTHORIZED: 'You need permissions',
+  DELETE_OK: 'Recibo borrado correctamente!'
 };
 
 config.STATUS = {

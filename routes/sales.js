@@ -579,4 +579,39 @@ router.delete(
   }
 );
 
+router.delete(
+  '/:id',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) => {
+
+    // Get sale
+    let sale = await Sale.findById(req.params.id);
+
+    for (let product of sale.products) {
+      let amountToRecover = _.round(product.quantity * product.unitsInPrice, 3);
+      let productToRecoverAmount = await Product.findById(product.product);
+      let newQuantity = productToRecoverAmount.quantity + amountToRecover;
+      productToRecoverAmount.quantity = newQuantity;
+      productToRecoverAmount.save();
+    }
+
+    Sale.findByIdAndRemove(req.params.id, (err, sale) => {
+
+      if (err) {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: sale
+        });
+      }
+
+      return res.status(config.STATUS.OK).send({
+        message: config.RES.DELETE_OK,
+        result: sale
+      });
+
+    });
+
+  }
+);
+
 module.exports = router;
