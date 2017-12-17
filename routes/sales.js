@@ -227,9 +227,15 @@ router.post(
       });
     }
 
+    if (req.body.client !== '') {
+      sales = await sales.filter(sale => {
+        return sale.client.trim().toLowerCase() === req.body.client.trim().toLowerCase();
+      });
+    }
+
     if (req.body.seller !== '') {
       sales = await sales.filter(sale => {
-        return sale.seller === req.body.seller;
+        return sale.seller.trim().toLowerCase() === req.body.seller.trim().toLowerCase();
       });
     }
 
