@@ -22,10 +22,9 @@ let haspermission = (req, res, next) => {
 
 router.post('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
 
-  const dniIsEmpty = validator.isEmpty(req.body.dni + '');
   const firstnameIsEmpty = validator.isEmpty(req.body.firstname + '');
 
-  if ( dniIsEmpty || firstnameIsEmpty) {
+  if (firstnameIsEmpty) {
     return res.status(config.STATUS.SERVER_ERROR).send({
       message: config.RES.ERROR
     });

@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const customer_squema = mongoose.Schema({
-  firstname: { type: String, required: true },
+  firstname: { type: String, required: true, unique: true },
   lastname: { type: String },
-  dni: { type: String, unique: true, required: true },
+  dni: { type: String },
   phone: { type: String },
   address: { type: String }
 }, { usePushEach: true });
