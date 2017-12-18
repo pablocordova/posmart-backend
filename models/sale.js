@@ -25,6 +25,4 @@ var sales_schema = mongoose.Schema({
   state: { type: String, required: true }
 }, { usePushEach: true });
 
-const sale = mongoose.model('Sale', sales_schema);
-
-module.exports = sale;
+module.exports = sales_schema;

@@ -26,6 +26,4 @@ var products_schema = mongoose.Schema({
   ]
 }, { usePushEach: true });
 
-const product = mongoose.model('Product', products_schema);
-
-module.exports = product;
+module.exports = products_schema;

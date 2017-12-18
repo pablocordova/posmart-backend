@@ -3,15 +3,22 @@ const express = require('express');
 const passport = require('passport');
 const validator = require('validator');
 
-const User = require('../models/user');
+const UserSchema = require('../models/user');
 
 const router = express.Router();
 
+const db = require('../app').db;
+let User = '';
 
 // My middleware to check permissions
 let hasPermission = (req, res, next) => {
 
-  if (req.user.permissions.users) {
+  let permission = req.user.permissions ? req.user.permissions.users : true;
+
+  if (permission) {
+    // Use its respective database
+    let dbAccount = db.useDb(req.user.database);
+    User = dbAccount.model('User', UserSchema);
     next();
   } else {
     res.status(config.STATUS.UNAUTHORIZED).send({

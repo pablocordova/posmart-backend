@@ -8,7 +8,6 @@ const saltRounds = 10;
 var user_schema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  enabled: { type: Boolean, default: true, required: true },
   password: { type: String, required: true },
   permissions: {
     customers: { type: Boolean, default: false, required: true },
@@ -16,8 +15,7 @@ var user_schema = new mongoose.Schema({
     sales: { type: Boolean, default: false, required: true },
     settings: { type: Boolean, default: false, required: true },
     users: { type: Boolean, default: false, required: true }
-  },
-  type: { type: String, enum: config.TYPE_USERS, required: true }
+  }
 }, { usePushEach: true });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen
@@ -30,6 +28,4 @@ user_schema.pre('save', function(next) {
   });
 });
 
-const user = mongoose.model('User', user_schema);
-
-module.exports = user;
+module.exports = user_schema;

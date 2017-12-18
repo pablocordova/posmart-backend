@@ -8,15 +8,28 @@ const http = require('http');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const passportJWT = require('passport-jwt');
-const User = require('./models/user');
+const UserSchema = require('./models/user');
+const BusinessSchema = require('./models/business');
+
+// Connect to db
+// Config bluebird as Promise, is faster
+mongoose.Promise = bluebird;
+
+let db = mongoose.createConnection(process.env.MONGO_PATH);
+module.exports.db = db;
 
 // Get our API routes
-const customers = require('./routes/customers');
 const login = require('./routes/login');
+const register = require('./routes/register');
+const customers = require('./routes/customers');
 const products = require('./routes/products');
 const sales = require('./routes/sales');
 const settings = require('./routes/settings');
 const users = require('./routes/users');
+
+let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
+
+const Business = dbGeneral.model('Business', BusinessSchema);
 
 // Strategy for authentification
 var ExtractJwt = passportJWT.ExtractJwt;
@@ -29,16 +42,37 @@ jwtOptions.secretOrKey = process.env.JWT_KEY;
 // Here, passport is defining as a middleware
 var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
 
-  User.findById(jwt_payload.id, function(err, user) {
-
-    if (err) return next(err, false);
-
-    if (user) {
-      return next(null, user);
-    } else {
-      return next(null, false);
+  switch (jwt_payload.type) {
+    case 'app': {
+      let database = jwt_payload.database;
+      let dbUser = db.useDb(database);
+      const User = dbUser.model('User', UserSchema);
+      User.findById(jwt_payload.id, function(err, user) {
+        if (err) return next(err, false);
+        user['database'] = database;
+        if (user) {
+          return next(null, user);
+        } else {
+          return next(null, false);
+        }
+      });
+      break;
     }
-  });
+    case 'dashboard':
+      Business.findById(jwt_payload.id, function(err, user) {
+
+        if (err) return next(err, false);
+
+        if (user) {
+          return next(null, user);
+        } else {
+          return next(null, false);
+        }
+      });
+      break;
+    default:
+      break;
+  }
 
 });
 
@@ -52,42 +86,12 @@ var app = express();
 
 // To use helmet
 app.use(helmet());
-/*
-app.use(helmet.frameguard({
-  action: 'allow-from',
-  domain: 'https://accounts.google.com'
-}));
-*/
+
 // Parsers for POST data
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Connect to db
-// Config bluebird as Promise, is faster
-mongoose.Promise = bluebird;
 
-// By defaul mongo path for production
-let MONGO_PATH = '';
-
-switch (process.env.NODE_ENV) {
-
-  case 'production':
-    MONGO_PATH = process.env.MONGO_PATH;
-    break;
-  case 'development':
-    MONGO_PATH = process.env.MONGO_PATH_DEV;
-    break;
-  case 'test':
-    MONGO_PATH = process.env.MONGO_PATH_TEST;
-    break;
-}
-
-mongoose.connect(MONGO_PATH, { useMongoClient: true }, err => {
-  // No console log for test environment, to log better presentation
-  if (process.env.NODE_ENV !== 'test') {
-    if (!err) console.log('Success connection to Mongo!');
-  }
-});
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Credentials', true);
@@ -104,6 +108,7 @@ app.use(function(req, res, next) {
 
 app.use('/customers', customers);
 app.use('/login', login);
+app.use('/register', register);
 app.use('/products', products);
 app.use('/sales', sales);
 app.use('/settings', settings);
@@ -123,4 +128,4 @@ const server = http.createServer(app);
 // Listen on provided port, on all network interfaces
 server.listen(port);
 
-module.exports = app;
+module.exports.app = app;

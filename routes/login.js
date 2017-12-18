@@ -5,9 +5,15 @@ const router = express.Router();
 
 const config = require('../config/login');
 const secretKey = process.env.JWT_KEY;
-const User = require('../models/user');
 
-router.post('/', function (req, res) {
+let UserSchema = require('../models/user');
+let BusinessSchema = require('../models/business');
+
+const db = require('../app').db;
+let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
+let Business = dbGeneral.model('Business', BusinessSchema);
+
+router.post('/', async function (req, res) {
 
   if (!req.body.email || !req.body.password) {
     return res.status(config.STATUS.SERVER_ERROR).send({
@@ -15,21 +21,29 @@ router.post('/', function (req, res) {
     });
   }
 
+  let businesses = await Business.find({});
+  let databaseName = '';
+
+  for (let business of businesses) {
+    let strToCompare = business.database.substring(0, 3) + business.database.substring(12, 15);
+    if (strToCompare === req.body.code) {
+      databaseName = business.database;
+      break;
+    }
+  }
+
+  if (databaseName === '') {
+    return res.status(config.STATUS.SERVER_ERROR).send({
+      message: 'Business not found'
+    });
+  }
+
+  let dbUser = db.useDb(databaseName);
+  let User = dbUser.model('User', UserSchema);
+
   User.findOne({ email: req.body.email }, function (err, user) {
 
     if (!user) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: 'Incorrect credentials'
-      });
-    }
-
-    if (!user.enabled) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: 'Incorrect credentials'
-      });
-    }
-
-    if (user.type !== req.body.type) {
       return res.status(config.STATUS.SERVER_ERROR).send({
         message: 'Incorrect credentials'
       });
@@ -45,16 +59,59 @@ router.post('/', function (req, res) {
         }
 
         if (isMatch) {
-          var payload = { id: user._id };
+          var payload = { id: user._id, type: 'app', database: databaseName };
           var token = jwt.sign(payload, secretKey);
 
           user.password = undefined;
-          res.status(config.STATUS.OK).send({
+          return res.status(config.STATUS.OK).send({
             token: token,
             username: user.username,
             email: user.email,
             type: user.type,
             _id: user._id
+          });
+        }
+      });
+    }
+  });
+
+});
+
+router.post('/business', function (req, res) {
+
+  if (!req.body.email || !req.body.password) {
+    return res.status(config.STATUS.SERVER_ERROR).send({
+      message: 'Incorrect credentials'
+    });
+  }
+
+  Business.findOne({ email: req.body.email }, function (err, business) {
+
+    if (!business) {
+      return res.status(config.STATUS.SERVER_ERROR).send({
+        message: 'Incorrect credentials'
+      });
+    }
+
+    if (business) {
+      bcrypt.compare(req.body.password, business.password, (err, isMatch) => {
+
+        if (!isMatch) {
+          return res.status(config.STATUS.SERVER_ERROR).send({
+            message: 'Incorrect credentials'
+          });
+        }
+
+        if (isMatch) {
+          var payload = { id: business._id, type: 'dashboard' };
+          var token = jwt.sign(payload, secretKey);
+
+          business.password = undefined;
+          return res.status(config.STATUS.OK).send({
+            token: token,
+            username: business.business,
+            email: business.email,
+            _id: business._id
           });
         }
       });

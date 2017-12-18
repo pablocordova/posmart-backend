@@ -5,15 +5,27 @@ const passport = require('passport');
 const _ = require('lodash');
 
 const config = require('../config/sales');
-const Customer = require('../models/customer');
-const Product = require('../models/product');
+const CustomerSchema = require('../models/customer');
+const ProductSchema = require('../models/product');
 const router = express.Router();
-const Sale = require('../models/sale');
+const SaleSchema = require('../models/sale');
+
+const db = require('../app').db;
+let Customer = '';
+let Sale = '';
+let Product = '';
 
 // My middleware to check permissions
 let haspermission = (req, res, next) => {
 
-  if (req.user.permissions.sales) {
+  let permission = req.user.permissions ? req.user.permissions.sales : true;
+
+  if (permission) {
+    // Use its respective database
+    let dbAccount = db.useDb(req.user.database);
+    Product = dbAccount.model('Product', ProductSchema);
+    Sale = dbAccount.model('Sale', SaleSchema);
+    Customer = dbAccount.model('Customer', CustomerSchema);
     next();
   } else {
     res.status(config.STATUS.UNAUTHORIZED).send({

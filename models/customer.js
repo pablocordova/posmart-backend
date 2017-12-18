@@ -8,6 +8,4 @@ const customer_squema = mongoose.Schema({
   address: { type: String }
 }, { usePushEach: true });
 
-const customer = mongoose.model('Customer', customer_squema);
-
-module.exports = customer;
+module.exports = customer_squema;

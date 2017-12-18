@@ -8,11 +8,18 @@ const request = require('request');
 const _ = require('lodash');
 
 const config = require('../config/settings');
-const Customer = require('../models/customer');
-const Product = require('../models/product');
-const Sale = require('../models/sale');
-const User = require('../models/user');
-const Setting = require('../models/setting');
+const CustomerSchema = require('../models/customer');
+const ProductSchema = require('../models/product');
+const SaleSchema = require('../models/sale');
+const UserSchema = require('../models/user');
+const SettingSchema = require('../models/setting');
+
+const db = require('../app').db;
+let Customer = '';
+let Sale = '';
+let Product = '';
+let User = '';
+let Setting = '';
 
 var OAuth2 = google.auth.OAuth2;
 const redirect_url = process.env.GCP_REDIRECT_URL;
@@ -51,7 +58,16 @@ var url = oauth2Client.generateAuthUrl({
 // My middleware to check permissions
 let haspermission = (req, res, next) => {
 
-  if (req.user.permissions.settings) {
+  let permission = req.user.permissions ? req.user.permissions.settings : true;
+
+  if (permission) {
+    // Use its respective database
+    let dbAccount = db.useDb(req.user.database);
+    Product = dbAccount.model('Product', ProductSchema);
+    Sale = dbAccount.model('Sale', SaleSchema);
+    Customer = dbAccount.model('Customer', CustomerSchema);
+    User = dbAccount.model('User', UserSchema);
+    Setting = dbAccount.model('Setting', SettingSchema);
     next();
   } else {
     res.status(config.STATUS.UNAUTHORIZED).send({

@@ -6,6 +6,4 @@ const setting_squema = mongoose.Schema({
   expirationTokenGoogle: { type: Date }
 }, { usePushEach: true });
 
-const setting = mongoose.model('Setting', setting_squema);
-
-module.exports = setting;
+module.exports = setting_squema;

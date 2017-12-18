@@ -7,13 +7,22 @@ const _ = require('lodash');
 
 const router = express.Router();
 const config = require('../config/products');
-const Product = require('../models/product');
-const Sale = require('../models/sale');
+const ProductSchema = require('../models/product');
+const SaleSchema = require('../models/sale');
+
+const db = require('../app').db;
+let Product = '';
+let Sale = '';
 
 // My middleware to check permissions
 let hasPermission = (req, res, next) => {
 
-  if (req.user.permissions.products) {
+  let permission = req.user.permissions ? req.user.permissions.products : true;
+  if (permission) {
+    // Use its respective database
+    let dbAccount = db.useDb(req.user.database);
+    Product = dbAccount.model('Product', ProductSchema);
+    Sale = dbAccount.model('Sale', SaleSchema);
     next();
   } else {
     res.status(config.STATUS.UNAUTHORIZED).send({
