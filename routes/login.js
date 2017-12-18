@@ -23,11 +23,13 @@ router.post('/', async function (req, res) {
 
   let businesses = await Business.find({});
   let databaseName = '';
+  let businessName = '';
 
   for (let business of businesses) {
     let strToCompare = business.database.substring(0, 3) + business.database.substring(12, 15);
     if (strToCompare === req.body.code) {
       databaseName = business.database;
+      businessName = business.business;
       break;
     }
   }
@@ -67,7 +69,7 @@ router.post('/', async function (req, res) {
             token: token,
             username: user.username,
             email: user.email,
-            type: user.type,
+            businessName: businessName,
             _id: user._id
           });
         }
@@ -111,6 +113,7 @@ router.post('/business', function (req, res) {
             token: token,
             username: business.business,
             email: business.email,
+            businessName: business.business,
             _id: business._id
           });
         }
