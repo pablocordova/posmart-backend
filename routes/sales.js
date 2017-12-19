@@ -219,7 +219,8 @@ router.post(
           seller: '$seller.username',
           state: 1,
           date: 1,
-          client: '$client.firstname'
+          client: '$client.firstname',
+          credits: 1
         }
       }
     );
@@ -261,6 +262,19 @@ router.post(
       sales = await sales.filter(sale => {
         return String(sale.total) === req.body.total;
       });
+    }
+
+    // Operaction for more details
+
+    for (let [ indexSale, sale ] of sales.entries()) {
+      if (sale.credits) {
+        let sumCredits = 0;
+        for (let credit of sale.credits) {
+          sumCredits += credit.amount;
+        }
+        sales[indexSale]['paidDebt'] = sumCredits;
+        sales[indexSale]['restDebt'] = sale.total - sumCredits;
+      }
     }
 
     return res.status(config.STATUS.OK).send({
