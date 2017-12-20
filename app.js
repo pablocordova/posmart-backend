@@ -19,6 +19,7 @@ let db = mongoose.createConnection(process.env.MONGO_PATH);
 module.exports.db = db;
 
 // Get our API routes
+const buys = require('./routes/buys');
 const login = require('./routes/login');
 const register = require('./routes/register');
 const customers = require('./routes/customers');
@@ -106,6 +107,7 @@ app.use(function(req, res, next) {
  * ROUTES
  */
 
+app.use('/buys', buys);
 app.use('/customers', customers);
 app.use('/login', login);
 app.use('/register', register);
