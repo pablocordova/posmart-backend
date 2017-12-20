@@ -49,13 +49,14 @@ router.post(
       let quantityToAdd = parseFloat(product.itemsPricesChosen) * parseFloat(product.quantity);
       let costToAdd = _.round(parseFloat(product.total) / quantityToAdd, 3);
       let productFound = await Product.findById(product.idProductChosen);
-      productFound.quantity = productFound.quantity + quantityToAdd;
       productFound.unitCost = productFound.unitCost !== 0 ?
         _.round(
           ((productFound.quantity * productFound.unitCost) + (costToAdd * quantityToAdd)) /
           (productFound.quantity + quantityToAdd), 3
         ) :
         parseFloat(costToAdd);
+
+      productFound.quantity = productFound.quantity + quantityToAdd;
 
       await productFound.save();
     }
