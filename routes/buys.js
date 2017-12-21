@@ -47,12 +47,12 @@ router.post(
     // Update inventory and cost
     for (let product of req.body.products) {
       let quantityToAdd = parseFloat(product.itemsPricesChosen) * parseFloat(product.quantity);
-      let costToAdd = _.round(parseFloat(product.total) / quantityToAdd, 3);
+      let costToAdd = _.round(parseFloat(product.total) / quantityToAdd, 10);
       let productFound = await Product.findById(product.idProductChosen);
       productFound.unitCost = productFound.unitCost !== 0 ?
         _.round(
           ((productFound.quantity * productFound.unitCost) + (costToAdd * quantityToAdd)) /
-          (productFound.quantity + quantityToAdd), 3
+          (productFound.quantity + quantityToAdd), 10
         ) :
         parseFloat(costToAdd);
 

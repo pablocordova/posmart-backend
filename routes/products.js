@@ -382,6 +382,35 @@ router.put(
 );
 
 router.put(
+  '/:id/cost',
+  passport.authenticate('jwt', { session: false }),
+  hasPermission, (req, res) => {
+
+    Product.findByIdAndUpdate(
+      req.params.id,
+      { unitCost: req.body.unitCost },
+      { new: true },
+      (err, productUpdated) => {
+
+        if (err) {
+          return res.status(config.STATUS.SERVER_ERROR).send({
+            message: config.RES.ERROR,
+            result: err
+          });
+        }
+
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: productUpdated
+        });
+
+      }
+    );
+
+  }
+);
+
+router.put(
   '/:id/prices/:indexPrice',
   passport.authenticate('jwt', { session: false }),
   hasPermission, (req, res) => {
