@@ -19,7 +19,6 @@ let Product = '';
 let haspermission = (req, res, next) => {
 
   let permission = req.user.permissions ? req.user.permissions.sales : true;
-
   if (permission) {
     // Use its respective database
     let dbAccount = db.useDb(req.user.database);
@@ -539,7 +538,6 @@ router.get(
       }
 
     );
-
     return res.status(config.STATUS.OK).send({
       message: config.RES.OK,
       result: sales[0]

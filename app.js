@@ -42,13 +42,19 @@ jwtOptions.secretOrKey = process.env.JWT_KEY;
 
 // Here, passport is defining as a middleware
 var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
-
   switch (jwt_payload.type) {
     case 'app': {
       let database = jwt_payload.database;
       let dbUser = db.useDb(database);
       const User = dbUser.model('User', UserSchema);
-      User.findById(jwt_payload.id, function(err, user) {
+      User.findById(jwt_payload.id, function(err, nuser) {
+        let user = {
+          _id: nuser._id,
+          email: nuser.email,
+          username: nuser.username,
+          database: database,
+          permissions: nuser.permissions
+        };
         if (err) return next(err, false);
         user['database'] = database;
         if (user) {
