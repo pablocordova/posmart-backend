@@ -117,7 +117,7 @@ router.post(
       const totalPriceProduct = product.total;
 
       // Generate fields necessaries for sale.products
-      products[index]['total'] = _.round(totalPriceProduct, 1);
+      products[index]['total'] = _.round(totalPriceProduct, 2);
       // Accumulative for the main total
       accumulativeTotalPrice += totalPriceProduct;
 
@@ -162,7 +162,7 @@ router.post(
     sale.seller = req.user._id;
     sale.subtotal = _.round(accumulativeTotalPrice/(1 + config.IGV), 2);
     sale.igv = _.round(accumulativeTotalPrice - sale.subtotal, 2);
-    sale.total = _.round(accumulativeTotalPrice, 1);
+    sale.total = _.round(accumulativeTotalPrice, 2);
 
     sale.save()
       .then((saleCreated) => {
