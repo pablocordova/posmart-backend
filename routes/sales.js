@@ -408,10 +408,10 @@ router.get(
           message: config.RES.OK
         });
       })
-      .catch(err => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
-          result: err
+      .catch(() => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: ''
         });
       });
 
