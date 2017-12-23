@@ -179,6 +179,7 @@ router.post(
 router.get('/', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
 
   Product.find({})
+    .sort('name')
     .then(products => {
       return res.status(config.STATUS.OK).send({
         result: products,

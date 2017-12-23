@@ -221,6 +221,11 @@ router.post(
           client: '$client.firstname',
           credits: 1
         }
+      },
+      {
+        $sort : {
+          date : -1
+        }
       }
     );
 

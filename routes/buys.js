@@ -85,6 +85,7 @@ router.post(
   (req, res) => {
 
     Buy.find({})
+      .sort({ date: -1 })
       .then(buys => {
         return res.status(config.STATUS.OK).send({
           result: buys,
