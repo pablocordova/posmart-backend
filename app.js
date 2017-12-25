@@ -27,6 +27,7 @@ const products = require('./routes/products');
 const sales = require('./routes/sales');
 const settings = require('./routes/settings');
 const users = require('./routes/users');
+const reports = require('./routes/reports');
 
 let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
 
@@ -121,6 +122,7 @@ app.use('/products', products);
 app.use('/sales', sales);
 app.use('/settings', settings);
 app.use('/users', users);
+app.use('/reports', reports);
 
 /**
  * INTIALIZE SERVER
