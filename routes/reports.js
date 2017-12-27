@@ -1,17 +1,19 @@
 const express = require('express');
 const passport = require('passport');
-const mongoose = require('mongoose');
+//const mongoose = require('mongoose');
+const moment = require('moment');
+const _ = require('lodash');
 
 const router = express.Router();
 const config = require('../config/buys');
 const SaleSchema = require('../models/sale');
-const CustomerSchema = require('../models/customer');
-const ProductSchema = require('../models/product');
+//const CustomerSchema = require('../models/customer');
+//const ProductSchema = require('../models/product');
 
 const db = require('../app').db;
 let Sale = '';
-let Product = '';
-let Customer = '';
+//let Product = '';
+//let Customer = '';
 
 // My middleware to check permissions
 let haspermission = (req, res, next) => {
@@ -22,8 +24,8 @@ let haspermission = (req, res, next) => {
     // Use its respective database
     let dbAccount = db.useDb(req.user.database);
     Sale = dbAccount.model('Sale', SaleSchema);
-    Product = dbAccount.model('Product', ProductSchema);
-    Customer = dbAccount.model('Customer', CustomerSchema);
+    //Product = dbAccount.model('Product', ProductSchema);
+    //Customer = dbAccount.model('Customer', CustomerSchema);
     next();
   } else {
     res.status(config.STATUS.UNAUTHORIZED).send({
@@ -33,13 +35,25 @@ let haspermission = (req, res, next) => {
 
 };
 
-router.get(
-  '/earnings/byclient',
+router.post(
+  '/earnings/:type',
   passport.authenticate('jwt', { session: false }),
   haspermission,
   async (req, res) => {
 
+    let type = req.params.type;
+    let DateFrom = new Date(req.body.from);
+    let DateTo = moment(new Date(req.body.to)).add(1, 'day').toDate();
+
     let sales = await Sale.aggregate(
+      {
+        $match:{
+          'date': {
+            $gte: DateFrom,
+            $lte: DateTo
+          }
+        }
+      },
       {
         $lookup:
           {
@@ -74,6 +88,7 @@ router.get(
           date: 1,
           state: 1,
           client: '$client.firstname',
+          clientId: '$client._id',
           product: {
             unitCost: '$products.product.unitCost',
             quantity: '$products.quantity',
@@ -98,6 +113,9 @@ router.get(
           client: {
             $first: '$client'
           },
+          clientId: {
+            $first: '$clientId'
+          },
           products: {
             $addToSet: '$product'
           }
@@ -106,24 +124,45 @@ router.get(
 
     );
 
-    let earningsByClient = [];
+    let earningsBySale = [];
+
+    // Calculate earnings by each sale
 
     for (let sale of sales) {
-      let client = sale.client;
       let totalEarning = 0;
       for (let product of sale.products) {
         let totalCost = (product.quantity * product.unitCost * product.unitsInPrice);
         totalEarning += product.total - totalCost;
       }
-      earningsByClient.push({
-        name: client,
+      earningsBySale.push({
+        client: sale.client,
+        clientId: sale.clientId,
+        date: sale.date,
+        state: sale.state,
         total: totalEarning
       });
-
     }
+
+    // Filters
+    let earningsBy = [];
+
+    switch (type) {
+      case 'client':
+        earningsBy = _(earningsBySale).groupBy('clientId')
+          .map((objs) => ({
+            'client': objs[0]['client'],
+            'total': _.sumBy(objs, 'total')
+          }))
+          .value();
+        break;
+      default:
+        earningsBy = earningsBySale;
+        break;
+    }
+
     return res.status(config.STATUS.OK).send({
       message: config.RES.OK,
-      result: earningsByClient
+      result: earningsBy
     });
 
   }
