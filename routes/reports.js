@@ -139,7 +139,7 @@ router.post(
         clientId: sale.clientId,
         date: sale.date,
         state: sale.state,
-        total: totalEarning
+        total: _.round(totalEarning, 2)
       });
     }
 
@@ -151,7 +151,7 @@ router.post(
         earningsBy = _(earningsBySale).groupBy('clientId')
           .map((objs) => ({
             'client': objs[0]['client'],
-            'total': _.sumBy(objs, 'total')
+            'total': _.round(_.sumBy(objs, 'total'), 2)
           }))
           .value();
         break;
