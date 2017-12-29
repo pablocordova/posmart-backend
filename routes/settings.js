@@ -78,6 +78,39 @@ let haspermission = (req, res, next) => {
 };
 
 router.get(
+  '/printer',
+  passport.authenticate('jwt', { session: false }),
+  haspermission,
+  async (req, res) => {
+
+    let query = Setting.find({});
+    let setting = await query.exec();
+
+    let data = {
+      printerId: '',
+      ticketSetting: {
+        title: '',
+        head1Line: '',
+        head2Line: '',
+        Foot1Line: '',
+        Foot2Line: ''
+      }
+    };
+
+    if (setting.length > 0) {
+      data.printerId = setting[0].printerId;
+      data.ticketSetting = setting[0].ticketSetting;
+    }
+
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK,
+      result: data
+    });
+
+  }
+);
+
+router.get(
   '/googleurl',
   passport.authenticate('jwt', { session: false }),
   haspermission,
@@ -174,6 +207,33 @@ router.post(
 
   }
 );
+
+router.post(
+  '/printer',
+  passport.authenticate('jwt', { session: false }),
+  haspermission,
+  async (req, res) => {
+
+    let query = Setting.find({});
+    let setting = await query.exec();
+    setting[0].printerId = req.body.printerId;
+    setting[0].ticketSetting = req.body.ticketSetting;
+    setting[0].save()
+      .then(() => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.SAVED_SUCCESSFULLY
+        });
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: err
+        });
+      });
+
+  }
+);
+
 
 async function generateHTMLSale(sale) {
   // Get data seller

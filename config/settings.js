@@ -4,7 +4,8 @@ config.RES = {
   CREATED: 'Created successfully',
   ERROR: 'Error processing data',
   OK: 'OK',
-  PRINTING: 'Sent to google print cloud'
+  PRINTING: 'Sent to google print cloud',
+  SAVED_SUCCESSFULLY: 'Guardado correctamente'
 };
 
 config.STATUS = {
