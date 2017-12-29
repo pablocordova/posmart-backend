@@ -87,6 +87,7 @@ router.get(
     let setting = await query.exec();
 
     let data = {
+      googleLog: false,
       printerId: '',
       ticketSetting: {
         title: '',
@@ -98,6 +99,7 @@ router.get(
     };
 
     if (setting.length > 0) {
+      data.googleLog = true;
       data.printerId = setting[0].printerId;
       data.ticketSetting = setting[0].ticketSetting;
     }
@@ -134,24 +136,30 @@ router.post(
 
       if (tokens.hasOwnProperty('refresh_token')) {
 
-        let setting = new Setting();
-        setting.refreshTokenGoogle = tokens.refresh_token;
-        setting.expirationTokenGoogle = tokens.expiry_date;
-        setting.tokenGoogle = tokens.access_token;
+        // First remove all setttings saved, because only must exist 1 setting
+        Setting.remove({}, function (err) {
+          if (err) return console.log(err);
 
-        setting.save()
-          .then((settingCreated) => {
-            return res.status(config.STATUS.CREATED).send({
-              message: config.RES.CREATED,
-              result: settingCreated
+          let setting = new Setting();
+          setting.refreshTokenGoogle = tokens.refresh_token;
+          setting.expirationTokenGoogle = tokens.expiry_date;
+          setting.tokenGoogle = tokens.access_token;
+
+          setting.save()
+            .then((settingCreated) => {
+              return res.status(config.STATUS.CREATED).send({
+                message: config.RES.CREATED,
+                result: settingCreated
+              });
+            })
+            .catch((err) => {
+              return res.status(config.STATUS.SERVER_ERROR).send({
+                message: config.RES.ERROR,
+                result: err
+              });
             });
-          })
-          .catch((err) => {
-            return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR,
-              result: err
-            });
-          });
+
+        });
       }
     });
   }
@@ -240,19 +248,23 @@ async function generateHTMLSale(sale) {
   const dataSeller = await User.findById(sale.seller);
   // Get data customer
   const dataClient = await Customer.findById(sale.client);
+  // Get data setting
+  let query = Setting.find({});
+  const setting = await query.exec();
 
   let hour = moment(sale.date).format('hh:mm:ss a');
   let day = moment(sale.date).format('DD/MM/YY');
 
   const separator = '<div>-----------------------------------------------</div>';
-  const title = '<h2 style="text-align:center;">INVERSIONES KARINA</h2>';
-  const address = '<div>Jr Agusto Beleguia 212 El progreso Carabayllo</div>';
-  const phone = '<div>Telf: 985467049 / 947298613</div>';
+  const title = '<h2 style="text-align:center;">' + setting[0].ticketSetting.title + '</h2>';
+  const address = '<div>' + setting[0].ticketSetting.head1Line + '</div>';
+  const phone = '<div>' + setting[0].ticketSetting.head2Line + '</div>';
   const code = '<div>ID: ' + String(sale._id).substring(0, 8) + '</div>';
   const seller = '<div>Vendedor: ' + dataSeller.username + '</div>';
   const date = '<div>Fecha: ' + day + ' Hora: ' + hour + '</div>';
   const customer = '<div>Cliente: ' + dataClient.firstname + '</div>';
-  const footer = '<div>Gracias por su preferencia</div>';
+  const footer = '<div>' + setting[0].ticketSetting.Foot1Line + '</div>';
+  const footer2 = '<div>' + setting[0].ticketSetting.Foot2Line + '</div>';
 
   let saleProduct = '';
 
@@ -309,6 +321,7 @@ async function generateHTMLSale(sale) {
     saleTable +
     total +
     footer +
+    footer2 +
     '</div>'
   );
 }
