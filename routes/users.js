@@ -1,14 +1,17 @@
 const config = require('../config/users');
 const express = require('express');
+const mongoose = require('mongoose');
 const passport = require('passport');
 const validator = require('validator');
 
 const UserSchema = require('../models/user');
+const SaleSchema = require('../models/sale');
 
 const router = express.Router();
 
 const db = require('../app').db;
 let User = '';
+let Sale = '';
 
 // My middleware to check permissions
 let hasPermission = (req, res, next) => {
@@ -19,6 +22,7 @@ let hasPermission = (req, res, next) => {
     // Use its respective database
     let dbAccount = db.useDb(req.user.database);
     User = dbAccount.model('User', UserSchema);
+    Sale = dbAccount.model('Sale', SaleSchema);
     next();
   } else {
     res.status(config.STATUS.UNAUTHORIZED).send({
@@ -120,25 +124,31 @@ router.put('/:id', passport.authenticate('jwt', { session: false }), hasPermissi
         });
       }
 
-      user.email = req.body.email;
-      user.username = req.body.username;
-      user.permissions = req.body.permissions;
-      user.permissionDiscount = req.body.permissionDiscount;
+      User.findByIdAndUpdate(
+        user._id,
+        {
+          email: req.body.email,
+          username: req.body.username,
+          permissions: req.body.permissions,
+          permissionDiscount: req.body.permissionDiscount
+        },
+        { new: true },
+        (err, userUpdated) => {
 
-      user.save()
-        .then((userUpdated) => {
+          if (err) {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR,
+              result: err
+            });
+          }
           userUpdated.password = undefined;
           return res.status(config.STATUS.OK).send({
             message: config.RES.OK,
             result: userUpdated
           });
-        })
-        .catch((err) => {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
-            result: err
-          });
-        });
+
+        }
+      );
 
     });
 
@@ -188,9 +198,9 @@ router.delete(
   hasPermission, async (req, res) => {
 
     // First check if user already has sales sells
-    const user = await User.find({ seller: req.params.id });
+    const sale = await Sale.find({ seller: mongoose.Types.ObjectId(req.params.id) });
 
-    if (user.length > 0) {
+    if (sale.length > 0) {
       return res.status(config.STATUS.SERVER_ERROR).send({
         message: config.RES.USER_SALES
       });

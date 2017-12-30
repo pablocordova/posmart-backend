@@ -47,7 +47,7 @@ router.post('/', async function (req, res) {
 
     if (!user) {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: 'Incorrect credentials'
+        message: 'User doesnt exits'
       });
     }
 
@@ -56,7 +56,7 @@ router.post('/', async function (req, res) {
 
         if (!isMatch) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: 'Incorrect credentials'
+            message: 'Incorrect password'
           });
         }
 
