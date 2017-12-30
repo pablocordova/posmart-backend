@@ -8,7 +8,8 @@ var business_schema = new mongoose.Schema({
   business: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  database: { type: String, required: true, unique: true }
+  database: { type: String, required: true, unique: true },
+  permissionPin: { type: Number, required: true, default: 12345 }
 }, { usePushEach: true });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen

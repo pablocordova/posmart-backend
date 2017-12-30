@@ -1,6 +1,7 @@
 const express = require('express');
 const google = require('googleapis');
 const moment = require('moment');
+const mongoose = require('mongoose');
 const passport = require('passport');
 let promise = require('bluebird');
 const router = express.Router();
@@ -8,6 +9,7 @@ const request = require('request');
 const _ = require('lodash');
 
 const config = require('../config/settings');
+const BusinessSchema = require('../models/business');
 const CustomerSchema = require('../models/customer');
 const ProductSchema = require('../models/product');
 const SaleSchema = require('../models/sale');
@@ -20,6 +22,9 @@ let Sale = '';
 let Product = '';
 let User = '';
 let Setting = '';
+
+let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
+let BusinessModel = dbGeneral.model('Business', BusinessSchema);
 
 var OAuth2 = google.auth.OAuth2;
 const redirect_url = process.env.GCP_REDIRECT_URL;
@@ -58,6 +63,7 @@ var url = oauth2Client.generateAuthUrl({
 // My middleware to check permissions
 let haspermission = (req, res, next) => {
 
+  // Case user is business, permissions won't exist and permission variable will be true
   let permission = req.user.permissions ? req.user.permissions.settings : true;
 
   if (permission) {
@@ -111,6 +117,21 @@ router.get(
 
   }
 );
+
+router.get(
+  '/pin',
+  passport.authenticate('jwt', { session: false }),
+  haspermission,
+  async (req, res) => {
+
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK,
+      result: req.user.permissionPin
+    });
+
+  }
+);
+
 
 router.get(
   '/googleurl',
@@ -238,6 +259,44 @@ router.post(
           result: err
         });
       });
+
+  }
+);
+
+router.put(
+  '/pin',
+  passport.authenticate('jwt', { session: false }),
+  haspermission,
+  (req, res) => {
+    console.log('here tryeing to update pin');
+    console.log(req.user._id);
+    console.log(req.body.pin);
+    console.log(req.user);
+
+    // Special case, here I'm going to use database general
+
+    BusinessModel.findByIdAndUpdate(
+      mongoose.Types.ObjectId(req.user._id),
+      {
+        permissionPin: req.body.pin
+      },
+      { new: true },
+      (err, userUpdated) => {
+        console.log(userUpdated);
+        if (err) {
+          return res.status(config.STATUS.SERVER_ERROR).send({
+            message: config.RES.ERROR,
+            result: err
+          });
+        }
+        userUpdated.password = undefined;
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: userUpdated
+        });
+
+      }
+    );
 
   }
 );
