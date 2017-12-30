@@ -268,10 +268,6 @@ router.put(
   passport.authenticate('jwt', { session: false }),
   haspermission,
   (req, res) => {
-    console.log('here tryeing to update pin');
-    console.log(req.user._id);
-    console.log(req.body.pin);
-    console.log(req.user);
 
     // Special case, here I'm going to use database general
 
