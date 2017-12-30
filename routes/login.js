@@ -24,12 +24,14 @@ router.post('/', async function (req, res) {
   let businesses = await Business.find({});
   let databaseName = '';
   let businessName = '';
+  let permissionPin = '';
 
   for (let business of businesses) {
     let strToCompare = business.database.substring(0, 3) + business.database.substring(12, 15);
     if (strToCompare === req.body.code) {
       databaseName = business.database;
       businessName = business.business;
+      permissionPin = business.permissionPin;
       break;
     }
   }
@@ -71,6 +73,7 @@ router.post('/', async function (req, res) {
             email: user.email,
             businessName: businessName,
             permissionDiscount: user.permissionDiscount,
+            permissionPin: permissionPin,
             _id: user._id
           });
         }
