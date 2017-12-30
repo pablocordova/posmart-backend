@@ -70,6 +70,7 @@ router.post('/', async function (req, res) {
             username: user.username,
             email: user.email,
             businessName: businessName,
+            permissionDiscount: user.permissionDiscount,
             _id: user._id
           });
         }

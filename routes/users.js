@@ -29,7 +29,7 @@ let hasPermission = (req, res, next) => {
 };
 
 // Create new user
-router.post('/', (req, res) => {
+router.post('/', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
 
   // Check because maybe the user has any permission
   //if (req.body.permissions) req.body.permissions = JSON.parse(req.body.permissions);
@@ -123,6 +123,7 @@ router.put('/:id', passport.authenticate('jwt', { session: false }), hasPermissi
       user.email = req.body.email;
       user.username = req.body.username;
       user.permissions = req.body.permissions;
+      user.permissionDiscount = req.body.permissionDiscount;
 
       user.save()
         .then((userUpdated) => {

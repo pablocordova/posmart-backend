@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const config = require('../config/users');
 
 // Cost of processing the data in bcrypt - salt
 const saltRounds = 10;
@@ -9,6 +8,7 @@ var user_schema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  permissionDiscount: { type: String, required: true },
   permissions: {
     customers: { type: Boolean, default: false, required: true },
     products: { type: Boolean, default: false, required: true },
