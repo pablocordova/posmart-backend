@@ -56,6 +56,10 @@ router.post('/', passport.authenticate('jwt', { session: false }), hasPermission
 
 });
 
+/**
+ * This route api is deprecated, because The entry is saved by group
+ */
+
 router.post(
   '/entry',
   passport.authenticate('jwt', { session: false }),
@@ -119,6 +123,10 @@ router.post(
   }
 );
 
+/**
+ * This route api is deprecated, because The prices is saved in group, with route port /prices
+ */
+
 router.post(
   '/price',
   passport.authenticate('jwt', { session: false }),
@@ -158,6 +166,45 @@ router.post(
             return res.status(config.STATUS.CREATED).send({
               message: config.RES.CREATED,
               result: priceCreated.price
+            });
+          })
+          .catch((err) => {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR,
+              result: err
+            });
+          });
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: err
+        });
+      });
+  }
+);
+
+router.post(
+  '/:id/prices',
+  passport.authenticate('jwt', { session: false }),
+  hasPermission,
+  (req, res) => {
+
+    Product.findById(req.params.id)
+      .then(product => {
+
+        let arrayProductPrices = req.body.pricesTmp;
+        product.prices = [];
+        // Sort prices
+        if (arrayProductPrices.length > 0) {
+          product.prices =  _.sortBy(arrayProductPrices, 'items');
+        }
+
+        return product.save()
+          .then((priceCreated) => {
+            return res.status(config.STATUS.CREATED).send({
+              message: config.RES.CREATED,
+              result: priceCreated.prices
             });
           })
           .catch((err) => {
@@ -497,6 +544,10 @@ router.delete(
 
   }
 );
+
+/**
+ * This route api is deprecated, because The prices not is deleted, is overwritten
+ */
 
 router.delete(
   '/:id/prices/:indexPrice',
