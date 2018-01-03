@@ -37,7 +37,7 @@ router.post('/', async function (req, res) {
   }
 
   if (databaseName === '') {
-    return res.status(config.STATUS.SERVER_ERROR).send({
+    return res.status(config.STATUS.OK).send({
       message: 'Business not found'
     });
   }
@@ -48,7 +48,7 @@ router.post('/', async function (req, res) {
   User.findOne({ email: req.body.email }, function (err, user) {
 
     if (!user) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
+      return res.status(config.STATUS.OK).send({
         message: 'User doesnt exits'
       });
     }
@@ -57,7 +57,7 @@ router.post('/', async function (req, res) {
       bcrypt.compare(req.body.password, user.password, (err, isMatch) => {
 
         if (!isMatch) {
-          return res.status(config.STATUS.SERVER_ERROR).send({
+          return res.status(config.STATUS.OK).send({
             message: 'Incorrect password'
           });
         }
@@ -94,8 +94,8 @@ router.post('/business', function (req, res) {
   Business.findOne({ email: req.body.email }, function (err, business) {
 
     if (!business) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: 'Incorrect credentials'
+      return res.status(config.STATUS.OK).send({
+        message: 'User doesnt exits'
       });
     }
 
@@ -103,8 +103,8 @@ router.post('/business', function (req, res) {
       bcrypt.compare(req.body.password, business.password, (err, isMatch) => {
 
         if (!isMatch) {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: 'Incorrect credentials'
+          return res.status(config.STATUS.OK).send({
+            message: 'Incorrect password'
           });
         }
 
