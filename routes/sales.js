@@ -114,9 +114,11 @@ router.post(
       }
       */
       const totalPriceProduct = product.total;
+      const earning = totalPriceProduct - (queryProduct.unitCost * unitsSale);
 
       // Generate fields necessaries for sale.products
       products[index]['total'] = _.round(totalPriceProduct, 2);
+      products[index]['earning'] = _.round(earning, 2);
       // Accumulative for the main total
       accumulativeTotalPrice += totalPriceProduct;
 
@@ -176,6 +178,34 @@ router.post(
           result: err
         });
       });
+
+  }
+);
+
+/**
+ * Only temporary to generate enarnings in each sale
+ */
+
+router.post(
+  '/generate/earnings',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+    let sales = await Sale.find({});
+
+    for (let sale of sales) {
+      for (let [ index, product ] of sale.products.entries()) {
+        let productQuery = await Product.findById(product.product);
+        sale.products[index]['earning'] = product.total -
+          (product.unitsInPrice * product.quantity * productQuery.unitCost);
+      }
+      // save sale updated
+      sale.save();
+    }
+
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK
+    });
 
   }
 );
