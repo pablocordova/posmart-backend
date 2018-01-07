@@ -90,10 +90,13 @@ router.post(
           client: '$client.firstname',
           clientId: '$client._id',
           product: {
+            id: '$products.product._id',
+            name: '$products.product.name',
             unitCost: '$products.product.unitCost',
             quantity: '$products.quantity',
             unitsInPrice: '$products.unitsInPrice',
-            total: '$products.total'
+            total: '$products.total',
+            earning: '$products.earning'
           }
 
         }
@@ -125,14 +128,22 @@ router.post(
     );
 
     let earningsBySale = [];
+    let earningsByProductsId = {};
 
     // Calculate earnings by each sale
 
     for (let sale of sales) {
       let totalEarning = 0;
       for (let product of sale.products) {
-        let totalCost = (product.quantity * product.unitCost * product.unitsInPrice);
-        totalEarning += product.total - totalCost;
+        totalEarning += product.earning;
+        // Create earnings by objects
+        if (product.id in earningsByProductsId) {
+          earningsByProductsId[product.id]['total'] += product.earning;
+        } else {
+          earningsByProductsId[product.id] = {};
+          earningsByProductsId[product.id]['total'] = product.earning;
+          earningsByProductsId[product.id]['product'] = product.name;
+        }
       }
       earningsBySale.push({
         client: sale.client,
@@ -154,6 +165,13 @@ router.post(
             'total': _.round(_.sumBy(objs, 'total'), 2)
           }))
           .value();
+        break;
+      case 'product':
+        for (let earningProduct in earningsByProductsId) {
+          earningsByProductsId[earningProduct]['total'] =
+            _.round(earningsByProductsId[earningProduct]['total'], 2);
+          earningsBy.push(earningsByProductsId[earningProduct]);
+        }
         break;
       default:
         earningsBy = earningsBySale;
