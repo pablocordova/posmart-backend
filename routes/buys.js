@@ -79,6 +79,45 @@ router.post(
 );
 
 router.post(
+  '/:id/credits',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    let buy = await Buy.findById(req.params.id);
+
+    let credits = [];
+    if (buy.credits) {
+      credits = buy.credits;
+    }
+
+    let credit = {
+      date: req.body.date,
+      amount: req.body.amount
+    };
+
+    credits.push(credit);
+
+    buy.credits = credits;
+
+    buy.save()
+      .then((buyUpdated) => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: buyUpdated
+        });
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: err
+        });
+      });
+
+  }
+);
+
+router.post(
   '/search/advanced',
   passport.authenticate('jwt', { session: false }),
   haspermission,
@@ -95,6 +134,85 @@ router.post(
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.ERROR,
+        });
+      });
+
+  }
+);
+
+router.get(
+  '/:id/credits',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    Buy.findById(req.params.id)
+      .then(buy => {
+        return res.status(config.STATUS.OK).send({
+          result: buy.credits,
+          message: config.RES.OK
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
+        });
+      });
+
+  }
+);
+
+router.put(
+  '/:id/state',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    Buy.findByIdAndUpdate(
+      req.params.id,
+      { state: req.body.state },
+      { new: true },
+      (err, buyUpdated) => {
+
+        if (err) {
+          return res.status(config.STATUS.SERVER_ERROR).send({
+            message: config.RES.ERROR,
+            result: err
+          });
+        }
+
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: buyUpdated
+        });
+
+      }
+    );
+
+  }
+);
+
+router.delete(
+  '/:id/credits/:indexCredit',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) => {
+
+    // First check if products already has sales
+    let buy = await Buy.findById(req.params.id);
+
+    // Remove specific array element
+    buy.credits.splice(req.params.indexCredit, 1);
+
+    buy.save()
+      .then((buyUpdated) => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: buyUpdated
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
         });
       });
 
