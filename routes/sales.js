@@ -320,6 +320,69 @@ router.post(
 );
 
 router.post(
+  '/join/sales',
+  passport.authenticate('jwt', { session: false }),
+  haspermission, async (req, res) =>
+  {
+
+    let sales = [];
+
+    // Get all sales to join
+    for (let id of req.body.ids) {
+      sales.push(await Sale.findById(id));
+    }
+
+    // Generate new sale, unique information will be of first sale
+    let sale = sales[0];
+    let creditsAccumulative = [];
+    let productsAccumulative = [];
+    let totalAccumulative = 0;
+
+    for (let sale of sales) {
+      // Credits
+      if (sale.credits.length > 0) {
+        for (let credit of sale.credits) {
+          creditsAccumulative.push(credit);
+        }
+      }
+      // Products
+      for (let product of sale.products) {
+        productsAccumulative.push(product);
+      }
+      // Total
+      totalAccumulative += sale.total;
+    }
+
+    sale.credits = creditsAccumulative;
+    sale.date = moment().subtract(5, 'hours');
+    sale.products = productsAccumulative;
+    sale.total = _.round(totalAccumulative, 2);
+    sale.subtotal = _.round(totalAccumulative/(1 + config.IGV), 2);
+    sale.igv = _.round(totalAccumulative - sale.subtotal, 2);
+
+    // Remove rest of sales except the first
+    for (var i = 1; i < req.body.ids.length; i++) {
+      await Sale.findByIdAndRemove(req.body.ids[i]);
+    }
+
+    sale.save()
+      .then((saleUpdated) => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.OK,
+          result: saleUpdated
+        });
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: err
+        });
+      });
+
+  }
+);
+
+router.post(
   '/:id/credits',
   passport.authenticate('jwt', { session: false }),
   haspermission, async (req, res) =>
@@ -564,7 +627,7 @@ router.get(
             $first: '$client'
           },
           products: {
-            $addToSet: '$product'
+            $push: '$product'
           },
           state: {
             $first: '$state'
