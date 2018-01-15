@@ -1,5 +1,7 @@
-// Get dependencies
+// To use .env
 require('dotenv').config();
+
+// Get dependencies
 const bluebird = require('bluebird');
 const bodyParser = require('body-parser');
 const express = require('express');
@@ -8,14 +10,17 @@ const http = require('http');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const passportJWT = require('passport-jwt');
+
+// Schemas
 const UserSchema = require('./models/user');
 const BusinessSchema = require('./models/business');
 
-// Connect to db
-// Config bluebird as Promise, is faster
+// Config bluebird as Promise, is faster compared with native promise
 mongoose.Promise = bluebird;
 
+// Connect to db with "createConnection" because I'll use dynamic databases
 let db = mongoose.createConnection(process.env.MONGO_PATH);
+// export db, beccause the next routes will use this connection
 module.exports.db = db;
 
 // Get our API routes
@@ -29,8 +34,9 @@ const settings = require('./routes/settings');
 const users = require('./routes/users');
 const reports = require('./routes/reports');
 
+// Create Business model, to work with dashboard
+// Create only one time because only exist one database general
 let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
-
 const Business = dbGeneral.model('Business', BusinessSchema);
 
 // Strategy for authentification
@@ -42,23 +48,23 @@ jwtOptions.jwtFromRequest = ExtractJwt.fromAuthHeaderWithScheme('jwt');
 jwtOptions.secretOrKey = process.env.JWT_KEY;
 
 // Here, passport is defining as a middleware
+// I decode the JWT and make operations in accordance with "type" field
 var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
   switch (jwt_payload.type) {
+    // Case the user is logged from APP
     case 'app': {
+      // Get which database use the user
       let database = jwt_payload.database;
-      let dbUser = db.useDb(database);
+      // Create user model of specific user
+      // User create constantly because it depend on what user in consuming the data
+      const dbUser = db.useDb(database);
       const User = dbUser.model('User', UserSchema);
-      User.findById(jwt_payload.id, function(err, nuser) {
-        let user = {
-          _id: nuser._id,
-          email: nuser.email,
-          username: nuser.username,
-          database: database,
-          permissions: nuser.permissions
-        };
+
+      User.findById(jwt_payload.id, function(err, user) {
         if (err) return next(err, false);
-        user['database'] = database;
         if (user) {
+          // Case user exits, add database field, it database field will be used by routes
+          user['database'] = database;
           return next(null, user);
         } else {
           return next(null, false);
@@ -66,11 +72,10 @@ var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
       });
       break;
     }
+    // Case the user is logged from Dashboard
     case 'dashboard':
       Business.findById(jwt_payload.id, function(err, user) {
-
         if (err) return next(err, false);
-
         if (user) {
           return next(null, user);
         } else {
@@ -98,8 +103,6 @@ app.use(helmet());
 // Parsers for POST data
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-
-
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Credentials', true);
