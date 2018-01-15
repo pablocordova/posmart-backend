@@ -5,10 +5,10 @@ const passport = require('passport');
 const _ = require('lodash');
 
 const config = require('../config/sales');
-const CustomerSchema = require('../models/customer');
-const ProductSchema = require('../models/product');
+const CustomerSchema = require('../squemas/customer');
+const ProductSchema = require('../squemas/product');
 const router = express.Router();
-const SaleSchema = require('../models/sale');
+const SaleSchema = require('../squemas/sale');
 
 const db = require('../app').db;
 let Customer = '';

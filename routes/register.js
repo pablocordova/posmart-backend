@@ -2,8 +2,8 @@ const config = require('../config/register');
 const express = require('express');
 const moment = require('moment');
 
-const BusinessSchema = require('../models/business');
-const CustomerSchema = require('../models/customer');
+const BusinessSchema = require('../squemas/business');
+const CustomerSchema = require('../squemas/customer');
 
 const router = express.Router();
 

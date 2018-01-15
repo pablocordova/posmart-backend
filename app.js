@@ -12,8 +12,8 @@ const passport = require('passport');
 const passportJWT = require('passport-jwt');
 
 // Schemas
-const UserSchema = require('./models/user');
-const BusinessSchema = require('./models/business');
+const UserSchema = require('./squemas/user');
+const BusinessSchema = require('./squemas/business');
 
 // Config bluebird as Promise, is faster compared with native promise
 mongoose.Promise = bluebird;

@@ -4,8 +4,8 @@ const validator = require('validator');
 
 const router = express.Router();
 const config = require('../config/customers');
-const CustomerSchema = require('../models/customer');
-const SaleSchema = require('../models/sale');
+const CustomerSchema = require('../squemas/customer');
+const SaleSchema = require('../squemas/sale');
 
 const db = require('../app').db;
 let Customer = '';

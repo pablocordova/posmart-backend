@@ -9,12 +9,12 @@ const request = require('request');
 const _ = require('lodash');
 
 const config = require('../config/settings');
-const BusinessSchema = require('../models/business');
-const CustomerSchema = require('../models/customer');
-const ProductSchema = require('../models/product');
-const SaleSchema = require('../models/sale');
-const UserSchema = require('../models/user');
-const SettingSchema = require('../models/setting');
+const BusinessSchema = require('../squemas/business');
+const CustomerSchema = require('../squemas/customer');
+const ProductSchema = require('../squemas/product');
+const SaleSchema = require('../squemas/sale');
+const UserSchema = require('../squemas/user');
+const SettingSchema = require('../squemas/setting');
 
 const db = require('../app').db;
 let Customer = '';

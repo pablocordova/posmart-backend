@@ -5,8 +5,8 @@ const _ = require('lodash');
 
 const router = express.Router();
 const config = require('../config/buys');
-const BuySchema = require('../models/buy');
-const ProductSchema = require('../models/product');
+const BuySchema = require('../squemas/buy');
+const ProductSchema = require('../squemas/product');
 
 const db = require('../app').db;
 let Buy = '';

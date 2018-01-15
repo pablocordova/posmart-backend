@@ -6,8 +6,8 @@ const router = express.Router();
 const config = require('../config/login');
 const secretKey = process.env.JWT_KEY;
 
-let UserSchema = require('../models/user');
-let BusinessSchema = require('../models/business');
+let UserSchema = require('../squemas/user');
+let BusinessSchema = require('../squemas/business');
 
 const db = require('../app').db;
 let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);

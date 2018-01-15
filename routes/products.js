@@ -7,8 +7,8 @@ const _ = require('lodash');
 
 const router = express.Router();
 const config = require('../config/products');
-const ProductSchema = require('../models/product');
-const SaleSchema = require('../models/sale');
+const ProductSchema = require('../squemas/product');
+const SaleSchema = require('../squemas/sale');
 
 const db = require('../app').db;
 let Product = '';

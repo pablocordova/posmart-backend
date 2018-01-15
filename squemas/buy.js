@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const buy_squema = mongoose.Schema({
+const buySquema = mongoose.Schema({
   id: { type: String },
   date: { type: Date },
   company: { type: String },
@@ -24,4 +24,4 @@ const buy_squema = mongoose.Schema({
   state: { type: String, required: true }
 }, { usePushEach: true });
 
-module.exports = buy_squema;
+module.exports = buySquema;

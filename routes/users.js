@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const validator = require('validator');
 
-const UserSchema = require('../models/user');
-const SaleSchema = require('../models/sale');
+const UserSchema = require('../squemas/user');
+const SaleSchema = require('../squemas/sale');
 
 const router = express.Router();
 

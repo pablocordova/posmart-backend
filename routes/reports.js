@@ -6,7 +6,7 @@ const _ = require('lodash');
 
 const router = express.Router();
 const config = require('../config/buys');
-const SaleSchema = require('../models/sale');
+const SaleSchema = require('../squemas/sale');
 //const CustomerSchema = require('../models/customer');
 //const ProductSchema = require('../models/product');
 
