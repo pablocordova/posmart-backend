@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 // Cost of processing the data in bcrypt - salt
 const saltRounds = 10;
 
-var user_schema = new mongoose.Schema({
+var userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -19,7 +19,7 @@ var user_schema = new mongoose.Schema({
 }, { usePushEach: true });
 
 // Use bcrypt middleware to encryp password, salt is auto-gen
-user_schema.pre('save', function(next) {
+userSchema.pre('save', function(next) {
   let user = this;
   bcrypt.hash(user.password, saltRounds, (err, hash) => {
     if (err) return next();
@@ -28,4 +28,4 @@ user_schema.pre('save', function(next) {
   });
 });
 
-module.exports = user_schema;
+module.exports = userSchema;

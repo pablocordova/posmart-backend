@@ -1,32 +1,41 @@
-const express = require('express');
-const passport = require('passport');
-//const validator = require('validator');
-const _ = require('lodash');
 
+// Dependencies
+const express = require('express');
+const moment = require('moment');
+const passport = require('passport');
+const _ = require('lodash');
 const router = express.Router();
-const config = require('../config/buys');
+
+const config = require('../config/general');
+
 const BuySchema = require('../squemas/buy');
 const ProductSchema = require('../squemas/product');
 
 const db = require('../app').db;
+
 let Buy = '';
 let Product = '';
 
-// My middleware to check permissions
-let haspermission = (req, res, next) => {
+// Middleware to check permissions
+let chooseDB = (req, res, next) => {
 
-  let permission = req.user.permissions ? req.user.permissions.customers : true;
+  // Use its respective database
+  let dbAccount = db.useDb(req.user.database);
+  Buy = dbAccount.model('Buy', BuySchema);
+  Product = dbAccount.model('Product', ProductSchema);
+  next();
 
-  if (permission) {
-    // Use its respective database
-    let dbAccount = db.useDb(req.user.database);
-    Buy = dbAccount.model('Buy', BuySchema);
-    Product = dbAccount.model('Product', ProductSchema);
-    next();
-  } else {
+};
+
+// Middleware to check role only dashboard
+let hasDashboardRole = (req, res, next) => {
+
+  if (req.user.role != 'dashboard') {
     res.status(config.STATUS.UNAUTHORIZED).send({
       message: config.RES.UNAUTHORIZED
     });
+  } else {
+    next();
   }
 
 };
@@ -34,7 +43,8 @@ let haspermission = (req, res, next) => {
 router.post(
   '/',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardRole,
+  chooseDB,
   async (req, res) => {
 
     let buy = new Buy();
@@ -70,7 +80,7 @@ router.post(
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_CREATE,
           result: err
         });
       });
@@ -78,10 +88,81 @@ router.post(
   }
 );
 
-router.post(
+router.get(
+  '/search/advanced',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
+
+    Buy.find({})
+      .sort({ date: -1 })
+      .then(buys => {
+
+        // Filter by search
+        if (req.query.id !== '') {
+          buys = buys.filter(buy => {
+            return buy.id === req.query.id.trim().toLowerCase();
+          });
+        }
+
+        if (req.query.day !== '') {
+          buys = buys.filter(buy => {
+            const day = String(moment.utc(buy.date).format('YYYY-MM-DD'));
+            return day === req.query.day;
+          });
+        }
+
+        if (req.query.company !== '') {
+          buys = buys.filter(buy => {
+            return buy.company === req.query.company.trim().toLowerCase();
+          });
+        }
+
+        return res.status(config.STATUS.OK).send({
+          result: buys,
+          message: config.RES.OK,
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+        });
+      });
+
+  }
+);
+
+router.get(
   '/:id/credits',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
+  {
+
+    Buy.findById(req.params.id)
+      .then(buy => {
+        return res.status(config.STATUS.OK).send({
+          result: buy.credits,
+          message: config.RES.OK
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE
+        });
+      });
+
+  }
+);
+
+router.patch(
+  '/:id/credits',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     let buy = await Buy.findById(req.params.id);
@@ -109,7 +190,7 @@ router.post(
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_UPDATE,
           result: err
         });
       });
@@ -117,55 +198,12 @@ router.post(
   }
 );
 
-router.post(
-  '/search/advanced',
-  passport.authenticate('jwt', { session: false }),
-  haspermission,
-  (req, res) => {
-
-    Buy.find({})
-      .sort({ date: -1 })
-      .then(buys => {
-        return res.status(config.STATUS.OK).send({
-          result: buys,
-          message: config.RES.OK,
-        });
-      })
-      .catch(() => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
-        });
-      });
-
-  }
-);
-
-router.get(
-  '/:id/credits',
-  passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
-  {
-
-    Buy.findById(req.params.id)
-      .then(buy => {
-        return res.status(config.STATUS.OK).send({
-          result: buy.credits,
-          message: config.RES.OK
-        });
-      })
-      .catch(() => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
-        });
-      });
-
-  }
-);
-
-router.put(
+router.patch(
   '/:id/state',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     Buy.findByIdAndUpdate(
@@ -176,7 +214,7 @@ router.put(
 
         if (err) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         }
@@ -192,10 +230,12 @@ router.put(
   }
 );
 
-router.delete(
+router.patch(
   '/:id/credits/:indexCredit',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) => {
 
     // First check if products already has sales
     let buy = await Buy.findById(req.params.id);

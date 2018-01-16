@@ -21,7 +21,7 @@ const buySquema = mongoose.Schema({
       idProductChosen: { type: String }
     }
   ],
-  state: { type: String, required: true }
+  state: { type: String, required: true, default: 'Pagado' }
 }, { usePushEach: true });
 
 module.exports = buySquema;

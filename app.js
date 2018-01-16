@@ -49,6 +49,8 @@ jwtOptions.secretOrKey = process.env.JWT_KEY;
 
 // Here, passport is defining as a middleware
 // I decode the JWT and make operations in accordance with "type" field
+// OBSERVATION: the fields added('database' and 'role') not appears in console, but It is sent.
+
 var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
   switch (jwt_payload.type) {
     // Case the user is logged from APP
@@ -61,10 +63,14 @@ var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
       const User = dbUser.model('User', UserSchema);
 
       User.findById(jwt_payload.id, function(err, user) {
-        if (err) return next(err, false);
+        // Case the user doesn't exits, return not autorizate
+        if (err) return next(null, false);
+
         if (user) {
           // Case user exits, add database field, it database field will be used by routes
           user['database'] = database;
+          // Add user role to know what routes is permit use.
+          user['role'] = 'app';
           return next(null, user);
         } else {
           return next(null, false);
@@ -75,8 +81,11 @@ var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
     // Case the user is logged from Dashboard
     case 'dashboard':
       Business.findById(jwt_payload.id, function(err, user) {
-        if (err) return next(err, false);
+        // Case the user doesn't exits, return not autorizate
+        if (err) return next(null, false);
+
         if (user) {
+          user['role'] = 'dashboard';
           return next(null, user);
         } else {
           return next(null, false);
@@ -84,7 +93,8 @@ var strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
       });
       break;
     default:
-      break;
+      // Case another, not authorized
+      return next(null, false);
   }
 
 });
@@ -107,7 +117,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Credentials', true);
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
   res.header('Access-Control-Allow-Headers',
     'X-Requested-With,X-HTTP-Method-Override, Content-Type, Accept, Authorization, Origin');
   next();

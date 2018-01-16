@@ -17,7 +17,6 @@ let Product = '';
 
 // My middleware to check permissions
 let haspermission = (req, res, next) => {
-
   let permission = req.user.permissions ? req.user.permissions.sales : true;
   if (permission) {
     // Use its respective database
