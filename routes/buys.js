@@ -252,7 +252,7 @@ router.patch(
       })
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR_UPDATE
         });
       });
 

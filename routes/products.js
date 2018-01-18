@@ -1,5 +1,4 @@
 const express = require('express');
-const moment = require('moment');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const validator = require('validator');
@@ -14,180 +13,78 @@ const db = require('../app').db;
 let Product = '';
 let Sale = '';
 
-// My middleware to check permissions
-let hasPermission = (req, res, next) => {
+// Middleware to check permissions
+let chooseDB = (req, res, next) => {
 
-  let permission = req.user.permissions ? req.user.permissions.products : true;
-  if (permission) {
-    // Use its respective database
-    let dbAccount = db.useDb(req.user.database);
-    Product = dbAccount.model('Product', ProductSchema);
-    Sale = dbAccount.model('Sale', SaleSchema);
-    next();
-  } else {
+  // Use its respective database
+  let dbAccount = db.useDb(req.user.database);
+  Product = dbAccount.model('Product', ProductSchema);
+  Sale = dbAccount.model('Sale', SaleSchema);
+  next();
+
+};
+
+// Middleware to check role only dashboard
+let hasDashboardRole = (req, res, next) => {
+
+  if (req.user.role != 'dashboard') {
     res.status(config.STATUS.UNAUTHORIZED).send({
       message: config.RES.UNAUTHORIZED
     });
+  } else {
+    next();
   }
 
 };
 
-router.post('/', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
+// Middleware to check role only dashboard
+let hasDashboardOrAppRole = (req, res, next) => {
 
-  let product = new Product();
-  product.name = req.body.name;
-  product.minimumUnit = req.body.minimumUnit;
-  product.category = req.body.category;
-  product.picture = req.body.picture;
-
-  product.save()
-    .then((productCreated) => {
-      return res.status(config.STATUS.CREATED).send({
-        message: config.RES.CREATED,
-        result: productCreated
-      });
-    })
-    .catch((err) => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.NOCREATED,
-        result: err
-      });
+  if (req.user.role != 'app' && req.user.role != 'dashboard') {
+    res.status(config.STATUS.UNAUTHORIZED).send({
+      message: config.RES.UNAUTHORIZED
     });
-
-});
-
-/**
- * This route api is deprecated, because The entry is saved by group
- */
-
-router.post(
-  '/entry',
-  passport.authenticate('jwt', { session: false }),
-  hasPermission,
-  (req, res) => {
-
-    const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
-    const unitCostIsEmpty = validator.isEmpty(req.body.unitCost + '');
-    const productIsEmpty = validator.isEmpty(req.body.product + '');
-    const quantityIsNumeric = validator.isDecimal(req.body.quantity + '');
-    const unitCostIsDecimal = validator.isDecimal(req.body.unitCost + '');
-    const arePositives = req.body.quantity >= 0 && req.body.unitCost >= 0;
-
-    if ( quantityIsEmpty || unitCostIsEmpty || productIsEmpty || !quantityIsNumeric ||
-      !unitCostIsDecimal || !arePositives) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
-      });
-    }
-
-    Product.findById(req.body.product)
-      .then(product => {
-
-        req.body.date = moment().subtract(5, 'hours');
-        product.entries.push(req.body);
-
-        // Add to the general quantity and general unitCost
-
-        const quantity = parseFloat(req.body.quantity);
-        const unitCost = parseFloat(req.body.unitCost);
-
-        product.unitCost = product.unitCost !== 0 ?
-          _.round(
-            ((product.quantity * product.unitCost) + (unitCost * quantity)) /
-            (product.quantity + quantity), 2
-          ) :
-          parseFloat(unitCost);
-
-        product.quantity += quantity;
-
-        product.save()
-          .then((productUpdated) => {
-            return res.status(config.STATUS.CREATED).send({
-              message: config.RES.CREATED,
-              result: productUpdated
-            });
-          })
-          .catch((err) => {
-            return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR,
-              result: err
-            });
-          });
-      })
-      .catch((err) => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
-          result: err
-        });
-      });
+  } else {
+    next();
   }
-);
 
-/**
- * This route api is deprecated, because The prices is saved in group, with route port /prices
- */
+};
 
 router.post(
-  '/price',
+  '/',
   passport.authenticate('jwt', { session: false }),
-  hasPermission,
+  hasDashboardRole,
+  chooseDB,
   (req, res) => {
 
-    const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
-    const nameIsEmpty = validator.isEmpty(req.body.name + '');
-    const itemsIsNumeric = validator.isDecimal(req.body.items + '');
-    const priceIsDecimal = validator.isDecimal(req.body.price + '');
+    let product = new Product();
+    product.name = req.body.name;
+    product.minimumUnit = req.body.minimumUnit;
+    product.category = req.body.category;
+    product.picture = req.body.picture;
 
-    if ( quantityIsEmpty || nameIsEmpty || !itemsIsNumeric || !priceIsDecimal) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
-      });
-    }
-
-    Product.findById(req.body.product)
-      .then(product => {
-
-        // check case it is repeat data, TODO: research how to do this in the schema
-        for (let price of product.prices) {
-          if (price.quantity === req.body.quantity && price.name === req.body.name) {
-            return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR
-            });
-          }
-        }
-
-        let arrayProductPrices = product.prices;
-        arrayProductPrices.push(req.body);
-        // Sort prices
-        product.prices =  _.sortBy(arrayProductPrices, 'items');
-
-        product.save()
-          .then((priceCreated) => {
-            return res.status(config.STATUS.CREATED).send({
-              message: config.RES.CREATED,
-              result: priceCreated.price
-            });
-          })
-          .catch((err) => {
-            return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR,
-              result: err
-            });
-          });
+    product.save()
+      .then((productCreated) => {
+        return res.status(config.STATUS.CREATED).send({
+          message: config.RES.CREATED,
+          result: productCreated
+        });
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.NOCREATED,
           result: err
         });
       });
+
   }
 );
 
 router.post(
   '/:id/prices',
   passport.authenticate('jwt', { session: false }),
-  hasPermission,
+  hasDashboardRole,
+  chooseDB,
   (req, res) => {
 
     Product.findById(req.params.id)
@@ -223,45 +120,58 @@ router.post(
   }
 );
 
-router.get('/', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
+router.get(
+  '/',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardOrAppRole,
+  chooseDB,
+  (req, res) => {
 
-  Product.find({})
-    .sort('name')
-    .then(products => {
-      return res.status(config.STATUS.OK).send({
-        result: products,
-        message: config.RES.OK,
+    Product.find({})
+      .sort('name')
+      .then(products => {
+        return res.status(config.STATUS.OK).send({
+          result: products,
+          message: config.RES.OK,
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+        });
       });
-    })
-    .catch(() => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR,
+
+  }
+);
+
+router.get(
+  '/:id',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
+
+    Product.findById(req.params.id)
+      .then(product => {
+        return res.status(config.STATUS.OK).send({
+          result: product,
+          message: config.RES.OK,
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+        });
       });
-    });
 
-});
-
-router.get('/:id', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
-
-  Product.findById(req.params.id)
-    .then(product => {
-      return res.status(config.STATUS.OK).send({
-        result: product,
-        message: config.RES.OK,
-      });
-    })
-    .catch(() => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR,
-      });
-    });
-
-});
+  }
+);
 
 router.get(
   '/:id/entries',
   passport.authenticate('jwt', { session: false }),
-  hasPermission,
+  hasDashboardRole,
+  chooseDB,
   async (req, res) => {
 
     const productEntries = await Product.aggregate(
@@ -289,7 +199,8 @@ router.get(
 router.get(
   '/:id/prices/:indexPrice',
   passport.authenticate('jwt', { session: false }),
-  hasPermission,
+  hasDashboardRole,
+  chooseDB,
   async (req, res) => {
 
     let productPrice = await Product.aggregate(
@@ -320,7 +231,8 @@ router.get(
 router.get(
   '/:id/prices',
   passport.authenticate('jwt', { session: false }),
-  hasPermission,
+  hasDashboardRole,
+  chooseDB,
   async (req, res) => {
 
     const productPrices = await Product.aggregate(
@@ -347,7 +259,9 @@ router.get(
 router.get(
   '/all/min_units',
   passport.authenticate('jwt', { session: false }),
-  hasPermission, (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
     return res.status(config.STATUS.OK).send({
       message: config.RES.OK,
       result: config.MINIMUM_PACKAGES
@@ -358,7 +272,9 @@ router.get(
 router.get(
   '/all/categories',
   passport.authenticate('jwt', { session: false }),
-  hasPermission, (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
     return res.status(config.STATUS.OK).send({
       message: config.RES.OK,
       result: config.CATEGORIES
@@ -366,44 +282,52 @@ router.get(
   }
 );
 
-router.put('/:id', passport.authenticate('jwt', { session: false }), hasPermission, (req, res) => {
+router.put(
+  '/:id',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
 
-  Product.findById(req.params.id)
-    .then((product) => {
+    Product.findById(req.params.id)
+      .then((product) => {
 
-      product.name = req.body.name;
-      product.minimumUnit = req.body.minimumUnit;
-      product.category = req.body.category;
-      product.picture = req.body.picture;
+        product.name = req.body.name;
+        product.minimumUnit = req.body.minimumUnit;
+        product.category = req.body.category;
+        product.picture = req.body.picture;
 
-      product.save()
-        .then((productUpdated) => {
-          return res.status(config.STATUS.OK).send({
-            message: config.RES.OK,
-            result: productUpdated
+        product.save()
+          .then((productUpdated) => {
+            return res.status(config.STATUS.OK).send({
+              message: config.RES.OK,
+              result: productUpdated
+            });
+          })
+          .catch((err) => {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR,
+              result: err
+            });
           });
-        })
-        .catch((err) => {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
-            result: err
-          });
+
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR,
+          result: err
         });
-
-    })
-    .catch((err) => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR,
-        result: err
       });
-    });
 
-});
+  }
+);
 
 router.put(
   '/:id/enabled',
   passport.authenticate('jwt', { session: false }),
-  hasPermission, (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
 
     Product.findByIdAndUpdate(
       req.params.id,
@@ -432,7 +356,9 @@ router.put(
 router.put(
   '/:id/cost',
   passport.authenticate('jwt', { session: false }),
-  hasPermission, (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
 
     Product.findByIdAndUpdate(
       req.params.id,
@@ -461,7 +387,9 @@ router.put(
 router.put(
   '/:id/prices/:indexPrice',
   passport.authenticate('jwt', { session: false }),
-  hasPermission, (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
 
     const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
     const nameIsEmpty = validator.isEmpty(req.body.name + '');
@@ -508,7 +436,9 @@ router.put(
 router.delete(
   '/:id',
   passport.authenticate('jwt', { session: false }),
-  hasPermission, async (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) => {
 
     // First check if products already has sales
     const sales = await Sale.aggregate(
@@ -541,50 +471,6 @@ router.delete(
       });
 
     });
-
-  }
-);
-
-/**
- * This route api is deprecated, because The prices not is deleted, is overwritten
- */
-
-router.delete(
-  '/:id/prices/:indexPrice',
-  passport.authenticate('jwt', { session: false }),
-  hasPermission, async (req, res) => {
-
-    // First check if products already has sales
-    let product = await Product.findById(req.params.id);
-
-    if (!product) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.PRODUCT_MISSED
-      });
-    }
-
-    // Validation
-    if (req.params.indexPrice < 0 || req.params.indexPrice >= product.prices.length) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
-      });
-    }
-
-    // Remove specific array element
-    product.prices.splice(req.params.indexPrice, 1);
-
-    product.save()
-      .then((productUpdated) => {
-        return res.status(config.STATUS.OK).send({
-          message: config.RES.OK,
-          result: productUpdated
-        });
-      })
-      .catch(() => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
-        });
-      });
 
   }
 );

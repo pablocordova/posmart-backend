@@ -5,7 +5,7 @@ const moment = require('moment');
 const _ = require('lodash');
 
 const router = express.Router();
-const config = require('../config/buys');
+const config = require('../config/general');
 const SaleSchema = require('../squemas/sale');
 //const CustomerSchema = require('../models/customer');
 //const ProductSchema = require('../models/product');
