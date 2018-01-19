@@ -1,8 +1,10 @@
-const config = require('../config/users');
 const express = require('express');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const validator = require('validator');
+
+const config = require('../config/general');
+const configUsers = require('../config/users');
 
 const UserSchema = require('../squemas/user');
 const SaleSchema = require('../squemas/sale');
@@ -48,12 +50,14 @@ router.post(
     let user = new User(req.body);
     // Validate params
     const isEmail = validator.isEmail(user.email + '');
-    const isLengthUser = validator.isLength(user.username + '', config.USERNAME);
-    const isLengthPass = validator.isLength(user.password + '', config.PASSWORD);
-    const isAlphanumericPass = validator.isAlphanumeric(user.password + '', config.PASSWORD_LOCAL);
+    const isLengthUser = validator.isLength(user.username + '', configUsers.USERNAME);
+    const isLengthPass = validator.isLength(user.password + '', configUsers.PASSWORD);
+    const isAlphanumericPass = validator.isAlphanumeric(
+      user.password + '', configUsers.PASSWORD_LOCAL
+    );
 
     if (!isEmail || !isLengthUser || !isLengthPass || !isAlphanumericPass) {
-      return res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.INVALID_PARAMS });
+      return res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.INPUTS_NO_VALID });
     } else {
       user.save()
         .then((userCreated) => {
@@ -65,7 +69,7 @@ router.post(
         })
         .catch((err) => {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.NOCREATED,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         });
@@ -90,7 +94,7 @@ router.get(
       })
       .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
@@ -114,7 +118,7 @@ router.get(
       })
       .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
@@ -131,18 +135,18 @@ router.put(
 
     // Validate params
     const isEmail = validator.isEmail(req.body.email + '');
-    const isLengthUser = validator.isLength(req.body.username + '', config.USERNAME);
+    const isLengthUser = validator.isLength(req.body.username + '', configUsers.USERNAME);
 
     if (!isEmail || !isLengthUser) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INPUTS_NO_VALID
       });
     } else {
       User.findById(req.params.id, (err, user) => {
 
         if (err) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR
+            message: config.RES.ERROR_DATABASE
           });
         }
 
@@ -159,7 +163,7 @@ router.put(
 
             if (err) {
               return res.status(config.STATUS.SERVER_ERROR).send({
-                message: config.RES.ERROR,
+                message: config.RES.ERROR_DATABASE,
                 result: err
               });
             }
@@ -190,7 +194,8 @@ router.put(
 
       if (err) {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: err
+          message: config.RES.ERROR_DATABASE,
+          result: err
         });
       }
 
@@ -206,7 +211,7 @@ router.put(
         })
         .catch((err) => {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         });
@@ -228,8 +233,8 @@ router.delete(
     const sale = await Sale.find({ seller: mongoose.Types.ObjectId(req.params.id) });
 
     if (sale.length > 0) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.USER_SALES
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INPUTS_NO_VALID
       });
     }
 
@@ -237,13 +242,13 @@ router.delete(
 
       if (err) {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: user
         });
       }
 
       return res.status(config.STATUS.OK).send({
-        message: config.RES.DELETE_OK,
+        message: config.RES.OK,
         result: user
       });
 

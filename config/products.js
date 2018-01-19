@@ -1,21 +1,7 @@
 var config = new Object();
 
 config.RES = {
-  CREATED: 'Created successfully',
-  ERROR: 'Error processing data',
-  NOCREATED: 'Error trying to create item',
-  OK: 'OK',
-  PRODUCT_MISSED: 'Product not found',
-  PRODUCT_SALES: 'Error al borrar, producto ya tiene ventas',
-  UNAUTHORIZED: 'You need permissions',
-  DELETE_OK: 'Producto borrado correctamente!'
-};
-
-config.STATUS = {
-  CREATED: 201,
-  UNAUTHORIZED: 401,
-  OK: 200,
-  SERVER_ERROR: 500
+  PRODUCT_IN_SALE: 'Error al borrar, producto ya tiene ventas',////
 };
 
 config.MINIMUM_PACKAGES = [

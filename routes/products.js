@@ -3,9 +3,11 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const validator = require('validator');
 const _ = require('lodash');
-
 const router = express.Router();
-const config = require('../config/products');
+
+const config = require('../config/general');
+const configProducts = require('../config/products');
+
 const ProductSchema = require('../squemas/product');
 const SaleSchema = require('../squemas/sale');
 
@@ -72,7 +74,7 @@ router.post(
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.NOCREATED,
+          message: config.RES.ERROR_CREATE,
           result: err
         });
       });
@@ -106,14 +108,14 @@ router.post(
           })
           .catch((err) => {
             return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR,
+              message: config.RES.ERROR_CREATE,
               result: err
             });
           });
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ELEMENT_NOT_EXIST,
           result: err
         });
       });
@@ -135,9 +137,10 @@ router.get(
           message: config.RES.OK,
         });
       })
-      .catch(() => {
+      .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
+          result: err
         });
       });
 
@@ -160,7 +163,7 @@ router.get(
       })
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
         });
       });
 
@@ -264,7 +267,7 @@ router.get(
   (req, res) => {
     return res.status(config.STATUS.OK).send({
       message: config.RES.OK,
-      result: config.MINIMUM_PACKAGES
+      result: configProducts.MINIMUM_PACKAGES
     });
   }
 );
@@ -277,7 +280,7 @@ router.get(
   (req, res) => {
     return res.status(config.STATUS.OK).send({
       message: config.RES.OK,
-      result: config.CATEGORIES
+      result: configProducts.CATEGORIES
     });
   }
 );
@@ -306,7 +309,7 @@ router.put(
           })
           .catch((err) => {
             return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR,
+              message: config.RES.ERROR_DATABASE,
               result: err
             });
           });
@@ -314,7 +317,7 @@ router.put(
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
@@ -337,7 +340,7 @@ router.put(
 
         if (err) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         }
@@ -368,7 +371,7 @@ router.put(
 
         if (err) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         }
@@ -397,8 +400,8 @@ router.put(
     const priceIsDecimal = validator.isDecimal(req.body.price + '');
 
     if ( quantityIsEmpty || nameIsEmpty || !itemsIsNumeric || !priceIsDecimal) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INPUTS_NO_VALID
       });
     }
 
@@ -417,7 +420,7 @@ router.put(
       (err, productUpdated) => {
         if (err) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         }
@@ -451,7 +454,7 @@ router.delete(
 
     if (sales.length > 0) {
       return res.status(config.STATUS.OK).send({
-        message: config.RES.PRODUCT_SALES,
+        message: configProducts.RES.PRODUCT_IN_SALE,
         result: 'ERROR'
       });
     }
@@ -460,13 +463,13 @@ router.delete(
 
       if (err) {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: product
         });
       }
 
       return res.status(config.STATUS.OK).send({
-        message: config.RES.DELETE_OK,
+        message: config.RES.OK,
         result: product
       });
 

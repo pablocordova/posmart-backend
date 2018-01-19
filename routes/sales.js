@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const _ = require('lodash');
 
-const config = require('../config/sales');
+const config = require('../config/general');
+const configSales = require('../config/sales');
+
 const CustomerSchema = require('../squemas/customer');
 const ProductSchema = require('../squemas/product');
 const router = express.Router();
@@ -84,32 +86,17 @@ router.post(
     const costumer = await Customer.findById(clientId);
     if (!costumer) {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.NOCLIENT
+        message: config.RES.ELEMENT_NOT_EXIST,
+        result: clientId
       });
     }
 
     // Check if exist at lest 1 product to process
     if (products.length <= 0) {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.NOPRODUCTS
+        message: configSales.RES.NO_PRODUCTS
       });
     }
-
-    // Check if exist duplicate values, never need to repeat productId an priceIndex together
-    // I will comment this, because maybe really do exit the same product with same priceIndex
-    // But with differents discounts, for now It will be commented
-
-    /*
-    let withoutDuplicates = _.uniqBy(products, elem => {
-      return [ elem.product, elem.priceIndex ].join();
-    });
-
-    if (withoutDuplicates.length != products.length) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.PRODUCTS_DUPLICATED
-      });
-    }
-    */
 
     let accumulativeTotalPrice = 0;
     let tempProducts = [];
@@ -121,16 +108,16 @@ router.post(
       const productIsEmpty = typeof product.product === 'undefined';
 
       if (quantityIsEmpty || productIsEmpty) {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.NOPARAMETER
+        return res.status(config.STATUS.BAD_REQUEST).send({
+          message: config.RES.INPUTS_NO_VALID
         });
       }
 
       // Check if product exist
       const queryProduct = await Product.findById(product.product);
       if (!queryProduct) {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.NOPRODUCT + product.product
+        return res.status(config.STATUS.BAD_REQUEST).send({
+          message: configSales.RES.NO_PRODUCT + product.product
         });
       }
 
@@ -138,14 +125,7 @@ router.post(
       const unitsSale = parseFloat(product.quantity) * product.unitsInPrice;
 
       const quantityAfterSale = queryProduct.quantity - unitsSale;
-      // For now, restriction about inventory is suspended x 1
-      /*
-      if (quantityAfterSale < 0) {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.NOINVENTORY + queryProduct.name
-        });
-      }
-      */
+
       const totalPriceProduct = product.total;
       const earning = totalPriceProduct - (queryProduct.unitCost * unitsSale);
 
@@ -162,15 +142,6 @@ router.post(
 
       if (indexTemp >= 0) {
         tempProducts[indexTemp].quantity -= unitsSale;
-        // Also check the inventory
-        // For now, restriction about inventory is suspended x 2
-        /*
-        if (tempProducts[indexTemp].quantity < 0) {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.NOINVENTORY + queryProduct.name
-          });
-        }
-        */
       } else {
         // Save temporarily inventory and products id
         queryProduct.quantity = quantityAfterSale;
@@ -194,7 +165,7 @@ router.post(
     sale.date = moment().subtract(5, 'hours');
     sale.products = products;
     sale.seller = req.user._id;
-    sale.subtotal = _.round(accumulativeTotalPrice/(1 + config.IGV), 2);
+    sale.subtotal = _.round(accumulativeTotalPrice/(1 + configSales.IGV), 2);
     sale.igv = _.round(accumulativeTotalPrice - sale.subtotal, 2);
     sale.total = _.round(accumulativeTotalPrice, 2);
 
@@ -207,7 +178,7 @@ router.post(
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
@@ -396,7 +367,7 @@ router.post(
     sale.date = moment().subtract(5, 'hours');
     sale.products = productsAccumulative;
     sale.total = _.round(totalAccumulative, 2);
-    sale.subtotal = _.round(totalAccumulative/(1 + config.IGV), 2);
+    sale.subtotal = _.round(totalAccumulative/(1 + configSales.IGV), 2);
     sale.igv = _.round(totalAccumulative - sale.subtotal, 2);
 
     // Remove rest of sales except the first
@@ -413,7 +384,7 @@ router.post(
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
@@ -454,7 +425,7 @@ router.post(
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
@@ -478,7 +449,7 @@ router.get(
       })
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR_DATABASE
         });
       });
 
@@ -501,7 +472,7 @@ router.get(
       })
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR_DATABASE
         });
       });
 
@@ -525,7 +496,7 @@ router.get(
       })
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR_DATABASE
         });
       });
 
@@ -564,8 +535,8 @@ router.get(
         });
       })
       .catch(() => {
-        return res.status(config.STATUS.OK).send({
-          message: config.RES.OK,
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
           result: ''
         });
       });
@@ -589,7 +560,7 @@ router.get(
       })
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR_DATABASE
         });
       });
 
@@ -599,7 +570,7 @@ router.get(
 router.get(
   '/processed/:id',
   passport.authenticate('jwt', { session: false }),
-  hasAppRole,
+  hasDashboardOrAppRole,
   chooseDB,
   async (req, res) => {
 
@@ -721,7 +692,7 @@ router.put(
 
         if (err) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         }
@@ -759,7 +730,7 @@ router.delete(
       })
       .catch(() => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
+          message: config.RES.ERROR_DATABASE
         });
       });
 
@@ -794,7 +765,7 @@ router.delete(
       }
 
       return res.status(config.STATUS.OK).send({
-        message: config.RES.DELETE_OK,
+        message: config.RES.OK,
         result: sale
       });
 

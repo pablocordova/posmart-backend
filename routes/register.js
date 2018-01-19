@@ -1,6 +1,8 @@
-const config = require('../config/register');
 const express = require('express');
 const moment = require('moment');
+
+const config = require('../config/general');
+const configRegister = require('../config/register');
 
 const BusinessSchema = require('../squemas/business');
 const CustomerSchema = require('../squemas/customer');
@@ -19,7 +21,7 @@ router.post('/', (req, res) => {
 
   if (req.body.password !== req.body.passwordRepeat) {
     return res.status(config.STATUS.SERVER_ERROR).send({
-      message: config.RES.NOT_MATCH_PASS
+      message: configRegister.RES.NOT_MATCH_PASS
     });
   }
 
@@ -52,7 +54,7 @@ router.post('/', (req, res) => {
     })
     .catch((err) => {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR,
+        message: config.RES.ERROR_DATABASE,
         result: err
       });
     });

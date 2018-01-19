@@ -3,7 +3,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
-const config = require('../config/login');
+const config = require('../config/general');
+
 const secretKey = process.env.JWT_KEY;
 
 let UserSchema = require('../squemas/user');

@@ -8,7 +8,9 @@ const router = express.Router();
 const request = require('request');
 const _ = require('lodash');
 
-const config = require('../config/settings');
+const config = require('../config/general');
+const configSettings = require('../config/settings');
+
 const BusinessSchema = require('../squemas/business');
 const CustomerSchema = require('../squemas/customer');
 const ProductSchema = require('../squemas/product');
@@ -57,7 +59,7 @@ const ticketProperties = {
 
 var url = oauth2Client.generateAuthUrl({
   access_type: 'offline',
-  scope: config.URL_GCP
+  scope: configSettings.URL_GCP
 });
 
 // Middleware to check permissions
@@ -183,7 +185,7 @@ router.post(
             })
             .catch((err) => {
               return res.status(config.STATUS.SERVER_ERROR).send({
-                message: config.RES.ERROR,
+                message: config.RES.ERROR_DATABASE,
                 result: err
               });
             });
@@ -225,18 +227,15 @@ router.post(
           'Authorization': 'Bearer ' + accessToken
         }
       },
-      //function optionalCallback(err, httpResponse, body) {
       function optionalCallback(err) {
         if (err) {
-          //console.error('upload failed:', err);
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         } else {
-          //console.log('Upload successful!  Server responded with:', body);
           return res.status(config.STATUS.OK).send({
-            message: config.RES.PRINTING,
+            message: configSettings.RES.PRINTING,
             printed: 'OK'
           });
         }
@@ -260,12 +259,12 @@ router.post(
     setting[0].save()
       .then(() => {
         return res.status(config.STATUS.OK).send({
-          message: config.RES.SAVED_SUCCESSFULLY
+          message: config.RES.CREATED
         });
       })
       .catch((err) => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR,
+          message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
@@ -292,7 +291,7 @@ router.put(
         console.log(userUpdated);
         if (err) {
           return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR,
+            message: config.RES.ERROR_DATABASE,
             result: err
           });
         }
@@ -337,7 +336,6 @@ async function generateHTMLSale(sale) {
   for (let product of sale.products) {
     // Get data about the product
     const dataProduct = await Product.findById(product.product);
-    //const items = dataProduct.prices[parseInt(product.price)].items;
     const items = product.unitsInPrice;
     const unitPrice = _.round(product.total/product.quantity, 2);
 
@@ -406,13 +404,8 @@ async function getTokenGoogleUpdated() {
   const dateTodayPlus1Minute = moment(dateToday).add(1, 'm').toDate();
   const dateExpiration = new Date(expirationTokenGoogle);
 
-  //console.log('Important data to nalize');
-  //console.log(dateExpiration);
-  //console.log(dateTodayPlus1Minute);
-
   // Case date expiration, get new token
   if (dateExpiration < dateTodayPlus1Minute) {
-    //console.log('Updating access token');
     oauth2Client.credentials['refresh_token'] = refreshTokenGoogle;
     // Is necessary convert callback to promise to make await the answer
     return new promise(resolve => {
@@ -423,14 +416,12 @@ async function getTokenGoogleUpdated() {
           setting[0].tokenGoogle = tokens.access_token;
 
           setting[0].save();
-          //console.log('inside callback hell');
-          //console.log(tokens.access_token);
+
           resolve(tokens.access_token);
         }
       );
     });
   } else {
-    //console.log('Using old access token');
     return tokenGoogle;
   }
 

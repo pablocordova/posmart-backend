@@ -3,7 +3,8 @@ const passport = require('passport');
 const validator = require('validator');
 
 const router = express.Router();
-const config = require('../config/customers');
+const config = require('../config/general');
+const configCustomers = require('../config/customers');
 const CustomerSchema = require('../squemas/customer');
 const SaleSchema = require('../squemas/sale');
 
@@ -147,7 +148,7 @@ router.put(
 
       if (!res) {
         return res.status(config.STATUS.ERROR).send({
-          message: config.RES.CUSTOMER_NOT_EXIST
+          message: config.RES.ELEMENT_NOT_EXIST
         });
       }
 
@@ -187,7 +188,7 @@ router.delete(
 
     if (sales.length > 0) {
       return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.CUSTOMER_SALES
+        message: configCustomers.RES.CUSTOMER_IN_SALE
       });
     }
 
