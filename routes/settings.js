@@ -60,25 +60,29 @@ var url = oauth2Client.generateAuthUrl({
   scope: config.URL_GCP
 });
 
-// My middleware to check permissions
-let haspermission = (req, res, next) => {
+// Middleware to check permissions
+let chooseDB = (req, res, next) => {
 
-  // Case user is business, permissions won't exist and permission variable will be true
-  let permission = req.user.permissions ? req.user.permissions.settings : true;
+  // Use its respective database
+  let dbAccount = db.useDb(req.user.database);
+  Product = dbAccount.model('Product', ProductSchema);
+  Sale = dbAccount.model('Sale', SaleSchema);
+  Customer = dbAccount.model('Customer', CustomerSchema);
+  User = dbAccount.model('User', UserSchema);
+  Setting = dbAccount.model('Setting', SettingSchema);
+  next();
 
-  if (permission) {
-    // Use its respective database
-    let dbAccount = db.useDb(req.user.database);
-    Product = dbAccount.model('Product', ProductSchema);
-    Sale = dbAccount.model('Sale', SaleSchema);
-    Customer = dbAccount.model('Customer', CustomerSchema);
-    User = dbAccount.model('User', UserSchema);
-    Setting = dbAccount.model('Setting', SettingSchema);
-    next();
-  } else {
+};
+
+// Middleware to check if have app or dashboard role
+let hasDashboardOrAppRole = (req, res, next) => {
+
+  if (req.user.role != 'app' && req.user.role != 'dashboard') {
     res.status(config.STATUS.UNAUTHORIZED).send({
       message: config.RES.UNAUTHORIZED
     });
+  } else {
+    next();
   }
 
 };
@@ -86,7 +90,8 @@ let haspermission = (req, res, next) => {
 router.get(
   '/printer',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   async (req, res) => {
 
     let query = Setting.find({});
@@ -121,7 +126,8 @@ router.get(
 router.get(
   '/pin',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   async (req, res) => {
 
     return res.status(config.STATUS.OK).send({
@@ -136,7 +142,8 @@ router.get(
 router.get(
   '/googleurl',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   (req, res) => {
     return res.status(config.STATUS.OK).send({
       result: { googleURLToken: url },
@@ -149,7 +156,8 @@ router.get(
 router.post(
   '/googletoken',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   (req, res) => {
     oauth2Client.getToken(req.body.code, function (err, tokens) {
       oauth2Client.credentials = tokens;
@@ -190,7 +198,8 @@ router.post(
 router.post(
   '/print/sale',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   async (req, res) => {
 
     const saleID = req.body.saleID;
@@ -240,7 +249,8 @@ router.post(
 router.post(
   '/printer',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   async (req, res) => {
 
     let query = Setting.find({});
@@ -266,7 +276,8 @@ router.post(
 router.put(
   '/pin',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   (req, res) => {
 
     // Special case, here I'm going to use database general

@@ -15,20 +15,53 @@ let Customer = '';
 let Sale = '';
 let Product = '';
 
-// My middleware to check permissions
-let haspermission = (req, res, next) => {
-  let permission = req.user.permissions ? req.user.permissions.sales : true;
-  if (permission) {
-    // Use its respective database
-    let dbAccount = db.useDb(req.user.database);
-    Product = dbAccount.model('Product', ProductSchema);
-    Sale = dbAccount.model('Sale', SaleSchema);
-    Customer = dbAccount.model('Customer', CustomerSchema);
-    next();
-  } else {
+// Middleware to check permissions
+let chooseDB = (req, res, next) => {
+
+  // Use its respective database
+  let dbAccount = db.useDb(req.user.database);
+  Product = dbAccount.model('Product', ProductSchema);
+  Sale = dbAccount.model('Sale', SaleSchema);
+  Customer = dbAccount.model('Customer', CustomerSchema);
+  next();
+
+};
+
+// Middleware to check role only dashboard
+let hasDashboardRole = (req, res, next) => {
+
+  if (req.user.role != 'dashboard') {
     res.status(config.STATUS.UNAUTHORIZED).send({
       message: config.RES.UNAUTHORIZED
     });
+  } else {
+    next();
+  }
+
+};
+
+// Middleware to check if have app role
+let hasAppRole = (req, res, next) => {
+
+  if (req.user.role != 'app') {
+    res.status(config.STATUS.UNAUTHORIZED).send({
+      message: config.RES.UNAUTHORIZED
+    });
+  } else {
+    next();
+  }
+
+};
+
+// Middleware to check if have app or dashboard role
+let hasDashboardOrAppRole = (req, res, next) => {
+
+  if (req.user.role != 'app' && req.user.role != 'dashboard') {
+    res.status(config.STATUS.UNAUTHORIZED).send({
+      message: config.RES.UNAUTHORIZED
+    });
+  } else {
+    next();
   }
 
 };
@@ -36,7 +69,8 @@ let haspermission = (req, res, next) => {
 router.post(
   '/',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardOrAppRole,
+  chooseDB,
   async (req, res) => {
 
     const clientId = req.body.client;
@@ -188,7 +222,9 @@ router.post(
 router.post(
   '/generate/earnings',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
     let sales = await Sale.find({});
 
@@ -212,7 +248,9 @@ router.post(
 router.post(
   '/search/advanced',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     let sales = await Sale.aggregate(
@@ -321,7 +359,9 @@ router.post(
 router.post(
   '/join/sales',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     let sales = [];
@@ -384,7 +424,9 @@ router.post(
 router.post(
   '/:id/credits',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     let sale = await Sale.findById(req.params.id);
@@ -420,44 +462,58 @@ router.post(
   }
 );
 
-router.get('/', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
+router.get(
+  '/',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
 
-  Sale.find({})
-    .then(sales => {
-      return res.status(config.STATUS.OK).send({
-        result: sales,
-        message: config.RES.OK
+    Sale.find({})
+      .then(sales => {
+        return res.status(config.STATUS.OK).send({
+          result: sales,
+          message: config.RES.OK
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
+        });
       });
-    })
-    .catch(() => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
+
+  }
+);
+
+router.get(
+  '/:id',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  (req, res) => {
+
+    Sale.findById(req.params.id)
+      .then(sale => {
+        return res.status(config.STATUS.OK).send({
+          result: sale,
+          message: config.RES.OK
+        });
+      })
+      .catch(() => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR
+        });
       });
-    });
 
-});
-
-router.get('/:id', passport.authenticate('jwt', { session: false }), haspermission, (req, res) => {
-
-  Sale.findById(req.params.id)
-    .then(sale => {
-      return res.status(config.STATUS.OK).send({
-        result: sale,
-        message: config.RES.OK
-      });
-    })
-    .catch(() => {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
-      });
-    });
-
-});
+  }
+);
 
 router.get(
   '/:id/credits',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     Sale.findById(req.params.id)
@@ -479,7 +535,9 @@ router.get(
 router.get(
   '/bypartialid/:id',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasAppRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     // For now, but I need to found a better way
@@ -518,7 +576,9 @@ router.get(
 router.get(
   '/last/10',
   passport.authenticate('jwt', { session: false }),
-  haspermission, (req, res) =>
+  hasAppRole,
+  chooseDB,
+  (req, res) =>
   {
     Sale.find({}).sort({ 'date': -1 }).limit(10)
       .then(sales => {
@@ -539,7 +599,9 @@ router.get(
 router.get(
   '/processed/:id',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) => {
+  hasAppRole,
+  chooseDB,
+  async (req, res) => {
 
     let sales = await Sale.aggregate(
       {
@@ -646,7 +708,9 @@ router.get(
 router.put(
   '/:id/state',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) =>
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
   {
 
     Sale.findByIdAndUpdate(
@@ -676,7 +740,9 @@ router.put(
 router.delete(
   '/:id/credits/:indexCredit',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) => {
 
     // First check if products already has sales
     let sale = await Sale.findById(req.params.id);
@@ -703,7 +769,9 @@ router.delete(
 router.delete(
   '/:id',
   passport.authenticate('jwt', { session: false }),
-  haspermission, async (req, res) => {
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) => {
 
     // Get sale
     let sale = await Sale.findById(req.params.id);

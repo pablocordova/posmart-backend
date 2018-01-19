@@ -37,7 +37,7 @@ let hasDashboardRole = (req, res, next) => {
 
 };
 
-// Middleware to check role only dashboard
+// Middleware to check if have app or dashboard role
 let hasDashboardOrAppRole = (req, res, next) => {
 
   if (req.user.role != 'app' && req.user.role != 'dashboard') {

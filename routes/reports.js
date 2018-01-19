@@ -1,36 +1,34 @@
 const express = require('express');
 const passport = require('passport');
-//const mongoose = require('mongoose');
 const moment = require('moment');
 const _ = require('lodash');
 
 const router = express.Router();
 const config = require('../config/general');
 const SaleSchema = require('../squemas/sale');
-//const CustomerSchema = require('../models/customer');
-//const ProductSchema = require('../models/product');
 
 const db = require('../app').db;
 let Sale = '';
-//let Product = '';
-//let Customer = '';
 
-// My middleware to check permissions
-let haspermission = (req, res, next) => {
+// Middleware to check permissions
+let chooseDB = (req, res, next) => {
 
-  let permission = req.user.permissions ? req.user.permissions.customers : true;
+  // Use its respective database
+  let dbAccount = db.useDb(req.user.database);
+  Sale = dbAccount.model('Sale', SaleSchema);
+  next();
 
-  if (permission) {
-    // Use its respective database
-    let dbAccount = db.useDb(req.user.database);
-    Sale = dbAccount.model('Sale', SaleSchema);
-    //Product = dbAccount.model('Product', ProductSchema);
-    //Customer = dbAccount.model('Customer', CustomerSchema);
-    next();
-  } else {
+};
+
+// Middleware to check role only dashboard
+let hasDashboardRole = (req, res, next) => {
+
+  if (req.user.role != 'dashboard') {
     res.status(config.STATUS.UNAUTHORIZED).send({
       message: config.RES.UNAUTHORIZED
     });
+  } else {
+    next();
   }
 
 };
@@ -38,7 +36,8 @@ let haspermission = (req, res, next) => {
 router.post(
   '/earnings/:type',
   passport.authenticate('jwt', { session: false }),
-  haspermission,
+  hasDashboardRole,
+  chooseDB,
   async (req, res) => {
 
     let type = req.params.type;
