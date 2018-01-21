@@ -13,6 +13,7 @@ config.RES = {
 
 config.STATUS = {
   BAD_REQUEST: 400,
+  CONFLICT: 409,
   CREATED: 201,
   OK: 200,
   SERVER_ERROR: 500,

@@ -10,7 +10,18 @@ const CustomerSchema = require('../squemas/customer');
 const router = express.Router();
 
 const db = require('../app').db;
-var dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
+let database = '';
+
+switch (process.env.NODE_ENV) {
+  case 'test':
+    database = process.env.DATABASE_TEST;
+    break;
+  case 'development':
+    database = process.env.DATABASE_GENERAL;
+    break;
+}
+
+var dbGeneral = db.useDb(database);
 var Business = dbGeneral.model('Business', BusinessSchema);
 
 var anysize = 5; //the size of string 
@@ -35,9 +46,20 @@ router.post('/', (req, res) => {
   business.business = req.body.business;
   business.email = req.body.email;
   business.password = req.body.password;
-  business.database = randomString + String(moment().unix());
 
-  // Also crete the first default customer
+  let databaseCustom = '';
+  switch (process.env.NODE_ENV) {
+    case 'test':
+      databaseCustom = process.env.DATABASE_TEST;
+      break;
+    case 'development':
+      databaseCustom = randomString + String(moment().unix());
+      break;
+  }
+
+  business.database = databaseCustom;
+
+  // Also create the first default customer
   let dbAccount = db.useDb(business.database);
   let Customer = dbAccount.model('Customer', CustomerSchema);
 

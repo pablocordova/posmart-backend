@@ -2,8 +2,11 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 
 const app = require('../app');
+const db = require('../app').db;
 const config = require('../config/users');
-const User = require('../models/user');
+const UserSchema = require('../squemas/user');
+
+const User = db.useDb(process.env.DATABASE_TEST).model('User', UserSchema);
 
 const expect = chai.expect;
 
