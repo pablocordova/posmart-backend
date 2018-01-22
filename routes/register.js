@@ -1,5 +1,6 @@
 const express = require('express');
 const moment = require('moment');
+const validator = require('validator');
 
 const config = require('../config/general');
 const configRegister = require('../config/register');
@@ -28,17 +29,71 @@ var anysize = 5; //the size of string
 var charset = 'abcdefghijklmnopqrstuvwxyz';
 
 // Create new user
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
 
-  if (req.body.password !== req.body.passwordRepeat) {
-    return res.status(config.STATUS.SERVER_ERROR).send({
-      message: configRegister.RES.NOT_MATCH_PASS
+  // Check if all parameters exist
+
+  if (!req.body.business) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'business'
+    });
+  }
+
+  if (!req.body.email) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'email'
+    });
+  }
+
+  if (!req.body.password) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'password'
+    });
+  }
+
+  // Check if business name have more than 1 character
+
+  if (req.body.business.length <= 1) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.INVALID_SYNTAX,
+      result: configRegister.RES.INVALID_BUSINESS_NAME
+    });
+  }
+
+  // Check if password have more than 1 character
+
+  if (req.body.password.length <= 1) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.INVALID_SYNTAX,
+      result: configRegister.RES.INVALID_PASSWORD
+    });
+  }
+
+  // Check if email have correct format
+  if (!validator.isEmail(req.body.email)) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.INVALID_SYNTAX,
+      result: configRegister.RES.INVALID_EMAIL
+    });
+  }
+
+  // Check if a business already have the email
+
+  const existEmail = await Business.find({ email: req.body.email });
+
+  if (existEmail.length !== 0) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.ITEM_DUPLICATED,
+      result: configRegister.RES.ERROR_DUPLICATED_EMAIL
     });
   }
 
   // To generate random string
-  let randomString='';
-  for (var i=0; i < anysize; i++ ) {
+  let randomString = '';
+  for (var i = 0; i < anysize; i++ ) {
     randomString += charset[Math.floor(Math.random() * charset.length)];
   }
 
@@ -69,7 +124,7 @@ router.post('/', (req, res) => {
 
   business.save()
     .then((businessCreated) => {
-      return res.status(config.STATUS.CREATED).send({
+      return res.status(config.STATUS.OK).send({
         message: config.RES.CREATED,
         result: businessCreated
       });

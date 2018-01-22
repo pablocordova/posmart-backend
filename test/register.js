@@ -41,6 +41,7 @@ describe('Register API routes', () => {
   });
 
   describe('POST /register', () => {
+
     it('Create business successfully', done => {
       chai.request(app)
         .post('/register')
@@ -50,7 +51,7 @@ describe('Register API routes', () => {
           expect(res).to.have.status(config.STATUS.OK);
           expect(res).to.be.json;
           expect(res.body.message).to.be.equal(config.RES.CREATED);
-          expect(res.body.result).to.be.json;
+          expect(res.body.result).to.exist;
           done();
         });
     });
@@ -139,7 +140,7 @@ describe('Register API routes', () => {
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.BAD_REQUEST);
           expect(res).to.be.json;
-          expect(res.body.meesage).to.be.equal(config.RES.INVALID_SYNTAX);
+          expect(res.body.message).to.be.equal(config.RES.INVALID_SYNTAX);
           expect(res.body.result).to.exist;
           done();
         });

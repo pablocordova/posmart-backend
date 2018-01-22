@@ -7,6 +7,8 @@ config.RES = {
   ERROR_DATABASE: 'Error with database',
   ERROR_UPDATE: 'Error updating item',
   INPUTS_NO_VALID: 'Inputs no valid',
+  INVALID_SYNTAX: 'Invalid syntax',
+  MISSING_PARAMETER: 'Missing parameter',
   OK: 'OK',
   UNAUTHORIZED: 'You do not have permissions'
 };
