@@ -1,7 +1,10 @@
 var config = new Object();
 
 config.RES = {
-  CREATED: 'Created successfully',
+  CREATED: 'Element Created successfully',
+  OK: 'OK',
+  UPDATED: 'Element updated successfully',
+  DELETED: 'Element deleted successfully',
   ELEMENT_NOT_EXIST: 'Element does not exist',
   ERROR_CREATE: 'Error creating item',
   ERROR_DATABASE: 'Error with database',
@@ -9,7 +12,6 @@ config.RES = {
   INPUTS_NO_VALID: 'Inputs no valid',
   INVALID_SYNTAX: 'Invalid syntax',
   MISSING_PARAMETER: 'Missing parameter',
-  OK: 'OK',
   UNAUTHORIZED: 'You do not have permissions'
 };
 

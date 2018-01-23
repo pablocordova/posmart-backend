@@ -194,22 +194,73 @@ router.put(
   passport.authenticate('jwt', { session: false }),
   hasDashboardRole,
   chooseDB,
-  (req, res) => {
+  async (req, res) => {
 
-    // Validate params
-    const isEmail = validator.isEmail(req.body.email + '');
-    const isLengthUser = validator.isLength(req.body.username + '', configUsers.USERNAME);
+    // Check if all parameters exist
 
-    if (!isEmail || !isLengthUser) {
+    if (!req.body.username) {
       return res.status(config.STATUS.BAD_REQUEST).send({
-        message: config.RES.INPUTS_NO_VALID
+        message: config.RES.MISSING_PARAMETER,
+        result: 'business'
       });
-    } else {
-      User.findById(req.params.id, (err, user) => {
+    }
 
-        if (err) {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR_DATABASE
+    if (!req.body.email) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'email'
+      });
+    }
+
+    if (!req.body.permissionDiscount) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'permissionDiscount'
+      });
+    }
+
+    // Check if username is duplicated
+    const existUsername = await User.find({ username: req.body.username });
+    if (existUsername.length !== 0) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configUsers.RES.ERROR_DUPLICATED_USERNAME
+      });
+    }
+
+    // Check if email is duplicated
+    const existEmail = await User.find({ email: req.body.email });
+    if (existEmail.length !== 0) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configUsers.RES.ERROR_DUPLICATED_EMAIL
+      });
+    }
+
+    // Check if email have correct format
+    if (!validator.isEmail(req.body.email)) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: configUsers.RES.INVALID_EMAIL
+      });
+    }
+
+    // Check if usename have more than 1 character
+
+    if (req.body.username.length <= 1) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: configUsers.RES.INVALID_USERNAME
+      });
+    }
+
+    User.findById(req.params.id)
+      .then(user => {
+
+        if (!user) {
+          return res.status(config.STATUS.OK).send({
+            message: configUsers.RES.NOT_FOUND,
+            result: req.params.id
           });
         }
 
@@ -218,71 +269,32 @@ router.put(
           {
             email: req.body.email,
             username: req.body.username,
-            permissions: req.body.permissions,
             permissionDiscount: req.body.permissionDiscount
           },
-          { new: true },
-          (err, userUpdated) => {
-
-            if (err) {
-              return res.status(config.STATUS.SERVER_ERROR).send({
-                message: config.RES.ERROR_DATABASE,
-                result: err
-              });
-            }
+          { new: true })
+          .then(userUpdated => {
             userUpdated.password = undefined;
             return res.status(config.STATUS.OK).send({
-              message: config.RES.OK,
+              message: config.RES.UPDATED,
               result: userUpdated
             });
+          })
+          .catch(err => {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR_DATABASE,
+              result: err
+            });
+          });
 
-          }
-        );
-
-      });
-
-    }
-
-  }
-);
-
-router.put(
-  '/:id/enabled',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  (req, res) => {
-
-    User.findById(req.params.id, (err, user) => {
-
-      if (err) {
+      }).
+      catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.ERROR_DATABASE,
           result: err
         });
-      }
-
-      user.enabled = req.body.enabled;
-
-      user.save()
-        .then((userUpdated) => {
-          userUpdated.password = undefined;
-          return res.status(config.STATUS.OK).send({
-            message: config.RES.OK,
-            result: userUpdated
-          });
-        })
-        .catch((err) => {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR_DATABASE,
-            result: err
-          });
-        });
-
-    });
+      });
 
   }
-
 );
 
 router.delete(
@@ -296,26 +308,33 @@ router.delete(
     const sale = await Sale.find({ seller: mongoose.Types.ObjectId(req.params.id) });
 
     if (sale.length > 0) {
-      return res.status(config.STATUS.BAD_REQUEST).send({
-        message: config.RES.INPUTS_NO_VALID
+      return res.status(config.STATUS.OK).send({
+        message: configUsers.RES.USER_WITH_SALE,
+        result: sale
       });
     }
 
-    User.findByIdAndRemove(req.params.id, (err, user) => {
+    User.findByIdAndRemove(req.params.id)
+      .then(user => {
 
-      if (err) {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR_DATABASE,
+        if (!user) {
+          return res.status(config.STATUS.OK).send({
+            message: configUsers.RES.NOT_FOUND,
+            result: req.params.id
+          });
+        }
+
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.DELETED,
           result: user
         });
-      }
-
-      return res.status(config.STATUS.OK).send({
-        message: config.RES.OK,
-        result: user
+      })
+      .catch(err => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+          result: err
+        });
       });
-
-    });
 
   }
 

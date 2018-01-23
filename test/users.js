@@ -29,6 +29,22 @@ const user = {
   'permissionDiscount': 'Permit'
 };
 
+// Password can't update, characteristic not implemented
+
+const userUpdate = {
+  'username': 'username2Tester2',
+  'email': 'email2@email2.com',
+  'permissionDiscount': 'PermitPIN'
+};
+
+// To check when user id not exist
+
+const userUpdateToNoUser = {
+  'username': 'usernameToNoUser',
+  'email': 'email@emailtoNoUser.com',
+  'permissionDiscount': 'PermitPIN'
+};
+
 // Authorization token to use webserver API
 let auth = '';
 let userId = '';
@@ -243,9 +259,6 @@ describe('User API routes', () => {
 
     it ('Failure due to wrong email syntax', done => {
 
-      let businessEmailWrong = Object.assign({}, business);
-      businessEmailWrong['email'] = 'novalidemail';
-
       let emailWrong = Object.assign({}, user);
       emailWrong.username = 'usernameTester2';
       emailWrong.email = 'mail25email.com';
@@ -310,24 +323,6 @@ describe('User API routes', () => {
 
   });
 
-
-  /*
-
-  describe('Get token for next tests', () => {
-
-    it('Login and get token', done => {
-      chai.request(app)
-        .post('/login')
-        .type('form')
-        .send(loginUser)
-        .end((err, res) => {
-          auth = { 'Authorization': 'JWT ' + res.body.token, 'Content-Type': 'application/json' };
-          done();
-        });
-    });
-
-  });
-
   describe('GET /users', () => {
 
     it('Get list of users', done => {
@@ -338,13 +333,15 @@ describe('User API routes', () => {
         .set(auth)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.OK);
           expect(res.body.result).to.exist;
           done();
         });
 
     });
 
-    it('Fail trying to get list of users because not authorization', done => {
+    it('Failure due to not authorization', done => {
 
       chai.request(app)
         .get('/users')
@@ -360,7 +357,7 @@ describe('User API routes', () => {
 
   describe('GET /users/:id', () => {
 
-    it('Get one of user', done => {
+    it('Get one user', done => {
 
       chai.request(app)
         .get('/users/' + userId)
@@ -368,13 +365,15 @@ describe('User API routes', () => {
         .set(auth)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.OK);
           expect(res.body.result).to.exist;
           done();
         });
 
     });
 
-    it('Fail trying to get one of user because not authorization', done => {
+    it('Failure due to not authorization', done => {
 
       chai.request(app)
         .get('/users/' + userId)
@@ -390,103 +389,47 @@ describe('User API routes', () => {
 
   describe('PUT /users/:id', () => {
 
-    it('Update user with normal type', done => {
+    it('Update user', done => {
 
       chai.request(app)
         .put('/users/' + userId)
         .type('form')
         .set(auth)
-        .send(user_updated)
+        .send(userUpdate)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.OK);
-          expect(res.body.result.username).to.be.equal(userObjUpdated.username);
-          expect(res.body.result.email).to.be.equal(userObjUpdated.email);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.UPDATED);
+          expect(res.body.result.username).to.be.equal(userUpdate.username);
+          expect(res.body.result.email).to.be.equal(userUpdate.email);
+          expect(res.body.result.permissionDiscount).to.be.equal(userUpdate.permissionDiscount);
           done();
         });
 
     });
 
-    it('Fail updating user because lacking some parameters', done => {
+    it('Failure due to user not found', done => {
 
       chai.request(app)
-        .put('/users/' + userId)
+        .put('/users/9a65a1d2977af10c88d49826')
         .type('form')
         .set(auth)
-        .send(userWithoutPermission)
-        .end((err, res) => {
-          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
-          done();
-        });
-
-    });
-
-    it('Fail updating user because empty parameters', done => {
-
-      chai.request(app)
-        .put('/users/' + userId)
-        .type('form')
-        .set(auth)
-        .send(userEmpty)
-        .end((err, res) => {
-          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
-          done();
-        });
-
-    });
-
-    it('Fail updating user because username less 2 caracters', done => {
-
-      chai.request(app)
-        .put('/users/' + userId)
-        .type('form')
-        .set(auth)
-        .send(userUsernameError)
-        .end((err, res) => {
-          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
-          done();
-        });
-
-    });
-
-    it('Fail updating user because invalid email', done => {
-
-      chai.request(app)
-        .put('/users/' + userId)
-        .type('form')
-        .set(auth)
-        .send(userInvalidEmail)
-        .end((err, res) => {
-          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
-          done();
-        });
-
-    });
-
-  });
-
-  describe('PUT /users/:id/enabled', () => {
-
-    it('Update enabled user to false', done => {
-
-      chai.request(app)
-        .put('/users/' + userId + '/enabled')
-        .type('form')
-        .set(auth)
-        .send({ enabled: false })
+        .send(userUpdateToNoUser)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.OK);
-          expect(res.body.result.enabled).to.be.equal(false);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(configUsers.RES.NOT_FOUND);
+          expect(res.body.result).to.exist;
           done();
         });
 
     });
 
-    it('Fail updating enabled user because authorization', done => {
+    it('Failure due to not authorization', done => {
 
       chai.request(app)
-        .put('/users/' + userId + '/enabled')
+        .put('/users/' + userId)
         .type('form')
-        .send({ enabled: false })
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
           done();
@@ -494,13 +437,158 @@ describe('User API routes', () => {
 
     });
 
+    it('Failure due to lack username parameter', done => {
+
+      let userWithoutUsername = Object.assign({}, userUpdate);
+      userWithoutUsername.username = undefined;
+      userWithoutUsername = JSON.parse(JSON.stringify(userWithoutUsername));
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userWithoutUsername)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.MISSING_PARAMETER);
+          expect(res.body.result).to.exist;
+          done();
+        });
+    });
+
+    it('Failure due to lack email parameter', done => {
+
+      let userWithoutEmail = Object.assign({}, userUpdate);
+      userWithoutEmail.email = undefined;
+      userWithoutEmail = JSON.parse(JSON.stringify(userWithoutEmail));
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userWithoutEmail)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.MISSING_PARAMETER);
+          expect(res.body.result).to.exist;
+          done();
+        });
+    });
+
+    it('Failure due to lack permissionDiscount parameter', done => {
+
+      let userWithoutPermissionDiscount = Object.assign({}, userUpdate);
+      userWithoutPermissionDiscount.permissionDiscount = undefined;
+      userWithoutPermissionDiscount = JSON.parse(JSON.stringify(userWithoutPermissionDiscount));
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userWithoutPermissionDiscount)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.MISSING_PARAMETER);
+          expect(res.body.result).to.exist;
+          done();
+        });
+    });
+
+    it('Failure due to lenght username name less than 2 characters', done => {
+
+      // Change email and username, to no duplicate it
+      let usernameWrong = Object.assign({}, userUpdate);
+      usernameWrong.username = 'u';
+      usernameWrong.email = 'mail3@email3.com';
+      usernameWrong = JSON.parse(JSON.stringify(usernameWrong));
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(usernameWrong)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.INVALID_SYNTAX);
+          expect(res.body.result).to.exist;
+          done();
+        });
+
+    });
+
+    it ('Failure due to wrong email syntax', done => {
+
+      let emailWrong = Object.assign({}, userUpdate);
+      emailWrong.username = 'usernameTester3';
+      emailWrong.email = 'mail25email.com';
+      emailWrong = JSON.parse(JSON.stringify(emailWrong));
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(emailWrong)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.INVALID_SYNTAX);
+          expect(res.body.result).to.exist;
+          done();
+        });
+
+    });
+
+    it('Failure due to duplicate username', done => {
+
+      // Change email, to no duplicate it
+      let userWithOtherEmail = Object.assign({}, userUpdate);
+      userWithOtherEmail.email = 'mail2@email.com';
+      userWithOtherEmail = JSON.parse(JSON.stringify(userWithOtherEmail));
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userWithOtherEmail)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.ITEM_DUPLICATED);
+          expect(res.body.result).to.be.equal(configUsers.RES.ERROR_DUPLICATED_USERNAME);
+          done();
+        });
+    });
+
+    it('Failure due to duplicate email', done => {
+
+      // Change username, to no duplicate it
+      let userWithOtherUsername = Object.assign({}, userUpdate);
+      userWithOtherUsername.username = 'usernameTester2';
+      userWithOtherUsername = JSON.parse(JSON.stringify(userWithOtherUsername));
+
+      chai.request(app)
+        .put('/users/' + userId)
+        .type('form')
+        .set(auth)
+        .send(userWithOtherUsername)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.ITEM_DUPLICATED);
+          expect(res.body.result).to.be.equal(configUsers.RES.ERROR_DUPLICATED_EMAIL);
+          done();
+        });
+    });
+
   });
 
   describe('DELETE /users/:id', () => {
 
-    // Pass delete test, was writing in final, because only exits 1 element
-
-    it('Fail delete user, because not have authorization', done => {
+    it('Failure due to not authorization', done => {
 
       chai.request(app)
         .delete('/users/' + userId)
@@ -510,6 +598,23 @@ describe('User API routes', () => {
         });
 
     });
+
+    it('Failure due to user not found', done => {
+
+      chai.request(app)
+        .delete('/users/9a65a1d2977af10c88d49826')
+        .set(auth)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(configUsers.RES.NOT_FOUND);
+          expect(res.body.result).to.exist;
+          done();
+        });
+
+    });
+
+    // It was written to the last, because of only exits 1 element
 
     it('Delete user', done => {
 
@@ -518,12 +623,13 @@ describe('User API routes', () => {
         .set(auth)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.DELETED);
           done();
         });
 
     });
 
   });
-  */
 
 });

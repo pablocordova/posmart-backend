@@ -23,7 +23,9 @@ config.RES = {
   ERROR_DUPLICATED_EMAIL: 'Email already exist',
   INVALID_EMAIL: 'Invalid email',
   INVALID_USERNAME: 'Invalid username',
-  INVALID_PASSWORD: 'Invalid password'
+  INVALID_PASSWORD: 'Invalid password',
+  NOT_FOUND: 'User not found',
+  USER_WITH_SALE: 'User already has sale'
 };
 
 module.exports = config;
