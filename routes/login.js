@@ -11,7 +11,19 @@ let UserSchema = require('../squemas/user');
 let BusinessSchema = require('../squemas/business');
 
 const db = require('../app').db;
-let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
+
+let database = '';
+
+switch (process.env.NODE_ENV) {
+  case 'test':
+    database = process.env.DATABASE_TEST;
+    break;
+  case 'development':
+    database = process.env.DATABASE_GENERAL;
+    break;
+}
+
+let dbGeneral = db.useDb(database);
 let Business = dbGeneral.model('Business', BusinessSchema);
 
 router.post('/', async function (req, res) {
@@ -43,7 +55,17 @@ router.post('/', async function (req, res) {
     });
   }
 
-  let dbUser = db.useDb(databaseName);
+  let databaseCustom = '';
+  switch (process.env.NODE_ENV) {
+    case 'test':
+      databaseCustom = process.env.DATABASE_TEST;
+      break;
+    case 'development':
+      databaseCustom = databaseName;
+      break;
+  }
+
+  let dbUser = db.useDb(databaseCustom);
   let User = dbUser.model('User', UserSchema);
 
   User.findOne({ email: req.body.email }, function (err, user) {

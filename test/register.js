@@ -2,18 +2,13 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 
 const server = require('../app');
-const db = server.db;
 const app = server.app;
 
 const config = require('../config/general');
 const configRegister = require('../config/register');
 
-const BusinessSchema = require('../squemas/business');
-const CustomerSchema = require('../squemas/customer');
 const databaseTest = process.env.DATABASE_TEST;
-
-const Business = db.useDb(databaseTest).model('Business', BusinessSchema);
-const Customer = db.useDb(databaseTest).model('Customers', CustomerSchema);
+const dbTest = server.db.useDb(databaseTest);
 
 const expect = chai.expect;
 
@@ -29,15 +24,10 @@ const business = {
 
 describe('Register API routes', () => {
 
-  // Clear collections
+  // Clear collections(Drop database)
   before(done => {
-    Business.remove({})
-      .then( () =>
-        Customer.remove({})
-      )
-      .then( () =>
-        done()
-      );
+    dbTest.dropDatabase();
+    done();
   });
 
   describe('POST /register', () => {

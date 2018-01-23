@@ -18,4 +18,12 @@ config.PASSWORD = {
 
 config.PASSWORD_LOCAL = 'es-ES';
 
+config.RES = {
+  ERROR_DUPLICATED_USERNAME: 'Username already exist',
+  ERROR_DUPLICATED_EMAIL: 'Email already exist',
+  INVALID_EMAIL: 'Invalid email',
+  INVALID_USERNAME: 'Invalid username',
+  INVALID_PASSWORD: 'Invalid password'
+};
+
 module.exports = config;

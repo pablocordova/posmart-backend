@@ -34,9 +34,19 @@ const settings = require('./routes/settings');
 const users = require('./routes/users');
 const reports = require('./routes/reports');
 
+let databaseGeneral = '';
+
+switch (process.env.NODE_ENV) {
+  case 'test':
+    databaseGeneral = process.env.DATABASE_TEST;
+    break;
+  case 'development':
+    databaseGeneral = process.env.DATABASE_GENERAL;
+    break;
+}
+
+let dbGeneral = db.useDb(databaseGeneral);
 // Create Business model, to work with dashboard
-// Create only one time because only exist one database general
-let dbGeneral = db.useDb(process.env.DATABASE_GENERAL);
 const Business = dbGeneral.model('Business', BusinessSchema);
 
 // Strategy for authentification

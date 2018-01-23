@@ -45,35 +45,98 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   hasDashboardRole,
   chooseDB,
-  (req, res) => {
+  async (req, res) => {
+
+    // Check if all parameters exist
+
+    if (!req.body.username) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'business'
+      });
+    }
+
+    if (!req.body.email) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'email'
+      });
+    }
+
+    if (!req.body.password) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'password'
+      });
+    }
+
+    if (!req.body.permissionDiscount) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'permissionDiscount'
+      });
+    }
+
+    // Check if username is duplicated
+    const existUsername = await User.find({ username: req.body.username });
+    if (existUsername.length !== 0) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configUsers.RES.ERROR_DUPLICATED_USERNAME
+      });
+    }
+
+    // Check if email is duplicated
+    const existEmail = await User.find({ email: req.body.email });
+    if (existEmail.length !== 0) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configUsers.RES.ERROR_DUPLICATED_EMAIL
+      });
+    }
+
+    // Check if email have correct format
+    if (!validator.isEmail(req.body.email)) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: configUsers.RES.INVALID_EMAIL
+      });
+    }
+
+    // Check if business name have more than 1 character
+
+    if (req.body.username.length <= 1) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: configUsers.RES.INVALID_USERNAME
+      });
+    }
+
+    // Check if password have more than 1 character
+
+    if (req.body.password.length < 8) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: configUsers.RES.INVALID_PASSWORD
+      });
+    }
 
     let user = new User(req.body);
-    // Validate params
-    const isEmail = validator.isEmail(user.email + '');
-    const isLengthUser = validator.isLength(user.username + '', configUsers.USERNAME);
-    const isLengthPass = validator.isLength(user.password + '', configUsers.PASSWORD);
-    const isAlphanumericPass = validator.isAlphanumeric(
-      user.password + '', configUsers.PASSWORD_LOCAL
-    );
 
-    if (!isEmail || !isLengthUser || !isLengthPass || !isAlphanumericPass) {
-      return res.status(config.STATUS.SERVER_ERROR).send({ message: config.RES.INPUTS_NO_VALID });
-    } else {
-      user.save()
-        .then((userCreated) => {
-          userCreated.password = undefined;
-          return res.status(config.STATUS.CREATED).send({
-            message: config.RES.CREATED,
-            result: userCreated
-          });
-        })
-        .catch((err) => {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR_DATABASE,
-            result: err
-          });
+    user.save()
+      .then((userCreated) => {
+        userCreated.password = undefined;
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.CREATED,
+          result: userCreated
         });
-    }
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+          result: err
+        });
+      });
 
   }
 );
