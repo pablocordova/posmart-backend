@@ -1,9 +1,11 @@
 const bcrypt = require('bcrypt');
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const validator = require('validator');
 const router = express.Router();
 
 const config = require('../config/general');
+const configLogin = require('../config/login');
 
 const secretKey = process.env.JWT_KEY;
 
@@ -108,9 +110,33 @@ router.post('/', async function (req, res) {
 
 router.post('/business', function (req, res) {
 
-  if (!req.body.email || !req.body.password) {
-    return res.status(config.STATUS.SERVER_ERROR).send({
-      message: 'Incorrect credentials'
+  if (!req.body.email) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'email'
+    });
+  }
+
+  if (!req.body.password) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'password'
+    });
+  }
+
+  // Check if password have more than 1 character
+  if (req.body.password.length <= 1) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.INVALID_SYNTAX,
+      result: configLogin.RES.INVALID_PASSWORD
+    });
+  }
+
+  // Check if email have correct format
+  if (!validator.isEmail(req.body.email)) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.INVALID_SYNTAX,
+      result: configLogin.RES.INVALID_EMAIL
     });
   }
 
@@ -118,7 +144,7 @@ router.post('/business', function (req, res) {
 
     if (!business) {
       return res.status(config.STATUS.OK).send({
-        message: 'User doesnt exits'
+        message: configLogin.RES.NOT_USER
       });
     }
 
@@ -127,7 +153,7 @@ router.post('/business', function (req, res) {
 
         if (!isMatch) {
           return res.status(config.STATUS.OK).send({
-            message: 'Incorrect password'
+            message: configLogin.RES.WRONG_PASS
           });
         }
 
