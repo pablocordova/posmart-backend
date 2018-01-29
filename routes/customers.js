@@ -1,6 +1,5 @@
 const express = require('express');
 const passport = require('passport');
-const validator = require('validator');
 
 const router = express.Router();
 const config = require('../config/general');
@@ -42,26 +41,29 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   hasAppRole,
   chooseDB,
-  (req, res) => {
+  async (req, res) => {
 
-    const firstnameIsEmpty = validator.isEmpty(req.body.firstname + '');
-
-    if (firstnameIsEmpty) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
+    if (!req.body.firstname) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'firstname'
       });
     }
 
-    let customer = new Customer();
-    customer.firstname = req.body.firstname;
-    customer.lastname = req.body.lastname;
-    customer.dni = req.body.dni;
-    customer.phone = req.body.phone;
-    customer.address = req.body.address;
+    // Check if firstname is duplicated
+    const existFirstname = await Customer.find({ firstname: req.body.firstname });
+    if (existFirstname.length !== 0) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configCustomers.RES.DUPLICATED_FIRSTNAME
+      });
+    }
+
+    let customer = new Customer(req.body);
 
     customer.save()
       .then((customerCreated) => {
-        return res.status(config.STATUS.CREATED).send({
+        return res.status(config.STATUS.OK).send({
           message: config.RES.CREATED,
           result: customerCreated
         });
@@ -86,13 +88,14 @@ router.get(
     Customer.find({})
       .then(customers => {
         return res.status(config.STATUS.OK).send({
-          result: customers,
           message: config.RES.OK,
+          result: customers
         });
       })
-      .catch(() => {
+      .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.ERROR,
+          result: err
         });
       });
 
@@ -109,13 +112,14 @@ router.get(
     Customer.findById(req.params.id)
       .then(customer => {
         return res.status(config.STATUS.OK).send({
-          result: customer,
           message: config.RES.OK,
+          result: customer
         });
       })
-      .catch(() => {
+      .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.ERROR,
+          result: err
         });
       });
 
@@ -127,51 +131,62 @@ router.put(
   passport.authenticate('jwt', { session: false }),
   hasAppRole,
   chooseDB,
-  (req, res) => {
+  async (req, res) => {
 
-    const dniIsEmpty = validator.isEmpty(req.body.dni + '');
-    const firstnameIsEmpty = validator.isEmpty(req.body.firstname + '');
-
-    if ( dniIsEmpty || firstnameIsEmpty) {
-      return res.status(config.STATUS.SERVER_ERROR).send({
-        message: config.RES.ERROR
+    if (!req.body.firstname) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'firstname'
       });
     }
 
-    Customer.findById(req.params.id, (err, customer) => {
+    // Check if firstname is duplicated
+    const existFirstname = await Customer.find({ firstname: req.body.firstname });
+    if (existFirstname.length !== 0 && existFirstname._id !== req.params.id) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configCustomers.RES.DUPLICATED_FIRSTNAME
+      });
+    }
 
-      if (err) {
-        return res.status(config.STATUS.ERROR).send({
-          message: config.RES.SERVER_ERROR
-        });
-      }
 
-      if (!res) {
-        return res.status(config.STATUS.ERROR).send({
-          message: config.RES.ELEMENT_NOT_EXIST
-        });
-      }
+    Customer.findById(req.params.id)
+      .then(customer => {
 
-      customer.firstname = req.body.firstname;
-      customer.lastname = req.body.lastname;
-      customer.dni = req.body.dni;
-      customer.phone = req.body.dni;
-      customer.address = req.body.address;
-
-      customer.save()
-        .then((customerUpdated) => {
+        if (!customer) {
           return res.status(config.STATUS.OK).send({
-            message: config.RES.UPDATED,
-            result: customerUpdated
+            message: configCustomers.RES.NOT_FOUND,
+            result: req.params.id
           });
-        })
-        .catch(() => {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR
-          });
-        });
+        }
 
-    });
+        customer.firstname = req.body.firstname;
+        customer.lastname = req.body.lastname;
+        customer.dni = req.body.dni;
+        customer.phone = req.body.phone;
+        customer.address = req.body.address;
+
+        customer.save()
+          .then((customerUpdated) => {
+            return res.status(config.STATUS.OK).send({
+              message: config.RES.UPDATED,
+              result: customerUpdated
+            });
+          })
+          .catch(err => {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR,
+              result: err
+            });
+          });
+
+      })
+      .catch(err => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+          result: err
+        });
+      });
 
   }
 );
@@ -192,20 +207,28 @@ router.delete(
       });
     }
 
-    Customer.findByIdAndRemove(req.params.id, (err, customer) => {
+    const customer = await Customer.findById(req.params.id);
 
-      if (err) {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR
-        });
-      }
-
+    if (!customer) {
       return res.status(config.STATUS.OK).send({
-        message: customer
+        message: configCustomers.RES.NOT_FOUND,
+        result: req.params.id
       });
+    }
 
-    });
-
+    Customer.findByIdAndRemove(req.params.id)
+      .then(customerDeleted => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.DELETED,
+          result: customerDeleted
+        });
+      })
+      .catch(err => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+          result: err
+        });
+      });
 
   }
 );

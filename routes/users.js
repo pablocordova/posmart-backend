@@ -286,8 +286,8 @@ router.put(
             });
           });
 
-      }).
-      catch(err => {
+      })
+      .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.ERROR_DATABASE,
           result: err

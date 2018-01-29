@@ -1,8 +1,8 @@
 require('./register');
 require('./users');
 require('./login');
+require('./customers');
 /*
 require('./products');
-require('./customers');
 require('./sales');
 /*/
