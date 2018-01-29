@@ -30,9 +30,32 @@ let Business = dbGeneral.model('Business', BusinessSchema);
 
 router.post('/', async function (req, res) {
 
-  if (!req.body.email || !req.body.password) {
-    return res.status(config.STATUS.SERVER_ERROR).send({
-      message: 'Incorrect credentials'
+  if (!req.body.email) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'email'
+    });
+  }
+
+  if (!req.body.password) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'password'
+    });
+  }
+
+  if (!req.body.code) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.MISSING_PARAMETER,
+      result: 'code'
+    });
+  }
+
+  // Check if email have correct format
+  if (!validator.isEmail(req.body.email)) {
+    return res.status(config.STATUS.BAD_REQUEST).send({
+      message: config.RES.INVALID_SYNTAX,
+      result: configLogin.RES.INVALID_EMAIL
     });
   }
 
@@ -43,6 +66,11 @@ router.post('/', async function (req, res) {
 
   for (let business of businesses) {
     let strToCompare = business.database.substring(0, 3) + business.database.substring(12, 15);
+    // Only for test case
+    if (process.env.NODE_ENV === 'test') {
+      strToCompare = process.env.DATABASE_TEST;
+    }
+
     if (strToCompare === req.body.code) {
       databaseName = business.database;
       businessName = business.business;
@@ -53,7 +81,7 @@ router.post('/', async function (req, res) {
 
   if (databaseName === '') {
     return res.status(config.STATUS.OK).send({
-      message: 'Business not found'
+      message: configLogin.RES.NOT_BUSINESS
     });
   }
 
@@ -74,7 +102,7 @@ router.post('/', async function (req, res) {
 
     if (!user) {
       return res.status(config.STATUS.OK).send({
-        message: 'User doesnt exits'
+        message: configLogin.RES.NOT_USER
       });
     }
 
@@ -83,7 +111,7 @@ router.post('/', async function (req, res) {
 
         if (!isMatch) {
           return res.status(config.STATUS.OK).send({
-            message: 'Incorrect password'
+            message: configLogin.RES.WRONG_PASS
           });
         }
 
