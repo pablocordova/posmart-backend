@@ -1,7 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const passport = require('passport');
-const validator = require('validator');
 const _ = require('lodash');
 const router = express.Router();
 
@@ -57,7 +56,54 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   hasDashboardRole,
   chooseDB,
-  (req, res) => {
+  async (req, res) => {
+
+    // Check if all parameters exist
+
+    if (!req.body.category) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'category'
+      });
+    }
+
+    if (!req.body.minimumUnit) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'minimumUnit'
+      });
+    }
+
+    if (!req.body.name) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'name'
+      });
+    }
+
+    if (configProducts.CATEGORIES.indexOf(req.body.category) === -1) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: 'category'
+      });
+    }
+
+    if (configProducts.MINIMUM_PACKAGES.indexOf(req.body.minimumUnit) === -1) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: 'minimumUnit'
+      });
+    }
+
+    // Check if a product naMe already exist
+    const existName = await Product.find({ name: req.body.name });
+
+    if (existName.length !== 0) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configProducts.RES.DUPLICATED_PRODUCT_NAME
+      });
+    }
 
     let product = new Product();
     product.name = req.body.name;
@@ -67,7 +113,7 @@ router.post(
 
     product.save()
       .then((productCreated) => {
-        return res.status(config.STATUS.CREATED).send({
+        return res.status(config.STATUS.OK).send({
           message: config.RES.CREATED,
           result: productCreated
         });
@@ -82,46 +128,6 @@ router.post(
   }
 );
 
-router.post(
-  '/:id/prices',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  (req, res) => {
-
-    Product.findById(req.params.id)
-      .then(product => {
-
-        let arrayProductPrices = req.body.pricesTmp;
-        product.prices = [];
-        // Sort prices
-        if (arrayProductPrices.length > 0) {
-          product.prices =  _.sortBy(arrayProductPrices, 'items');
-        }
-
-        return product.save()
-          .then((priceCreated) => {
-            return res.status(config.STATUS.CREATED).send({
-              message: config.RES.CREATED,
-              result: priceCreated.prices
-            });
-          })
-          .catch((err) => {
-            return res.status(config.STATUS.SERVER_ERROR).send({
-              message: config.RES.ERROR_CREATE,
-              result: err
-            });
-          });
-      })
-      .catch((err) => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ELEMENT_NOT_EXIST,
-          result: err
-        });
-      });
-  }
-);
-
 router.get(
   '/',
   passport.authenticate('jwt', { session: false }),
@@ -133,8 +139,8 @@ router.get(
       .sort('name')
       .then(products => {
         return res.status(config.STATUS.OK).send({
-          result: products,
           message: config.RES.OK,
+          result: products
         });
       })
       .catch((err) => {
@@ -157,78 +163,18 @@ router.get(
     Product.findById(req.params.id)
       .then(product => {
         return res.status(config.STATUS.OK).send({
-          result: product,
           message: config.RES.OK,
+          result: product
         });
       })
-      .catch(() => {
+      .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.ERROR_DATABASE,
+          result: err
         });
       });
 
   }
-);
-
-router.get(
-  '/:id/entries',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  async (req, res) => {
-
-    const productEntries = await Product.aggregate(
-      {
-        $match: {
-          _id: mongoose.Types.ObjectId(req.params.id)
-        }
-      },
-      {
-        $project: {
-          entries: '$entries'
-        }
-      }
-    );
-
-    return res.status(config.STATUS.OK).send({
-      message: config.RES.OK,
-      result: productEntries
-    });
-
-  }
-
-);
-
-router.get(
-  '/:id/prices/:indexPrice',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  async (req, res) => {
-
-    let productPrice = await Product.aggregate(
-      {
-        $match: {
-          _id: mongoose.Types.ObjectId(req.params.id)
-        }
-      },
-      {
-        $project: {
-          price: { $arrayElemAt: [ '$prices', parseInt(req.params.indexPrice) ] }
-        }
-      }
-    );
-
-    // Only get object and not array
-    productPrice = productPrice.pop();
-
-    return res.status(config.STATUS.OK).send({
-      message: config.RES.OK,
-      result: productPrice
-    });
-
-  }
-
 );
 
 router.get(
@@ -290,10 +236,57 @@ router.put(
   passport.authenticate('jwt', { session: false }),
   hasDashboardRole,
   chooseDB,
-  (req, res) => {
+  async (req, res) => {
+
+    // Check if all parameters exist
+
+    if (!req.body.category) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'category'
+      });
+    }
+
+    if (!req.body.minimumUnit) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'minimumUnit'
+      });
+    }
+
+    if (!req.body.name) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'name'
+      });
+    }
+
+    if (configProducts.CATEGORIES.indexOf(req.body.category) === -1) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: 'category'
+      });
+    }
+
+    if (configProducts.MINIMUM_PACKAGES.indexOf(req.body.minimumUnit) === -1) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.INVALID_SYNTAX,
+        result: 'minimumUnit'
+      });
+    }
+
+    // Check if a product naMe already exist
+    const existName = await Product.find({ name: req.body.name });
+
+    if (existName.length !== 0 && existName._id !== req.params.id) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.ITEM_DUPLICATED,
+        result: configProducts.RES.DUPLICATED_PRODUCT_NAME
+      });
+    }
 
     Product.findById(req.params.id)
-      .then((product) => {
+      .then(product => {
 
         product.name = req.body.name;
         product.minimumUnit = req.body.minimumUnit;
@@ -301,13 +294,13 @@ router.put(
         product.picture = req.body.picture;
 
         product.save()
-          .then((productUpdated) => {
+          .then(productUpdated => {
             return res.status(config.STATUS.OK).send({
-              message: config.RES.OK,
+              message: config.RES.UPDATED,
               result: productUpdated
             });
           })
-          .catch((err) => {
+          .catch(err => {
             return res.status(config.STATUS.SERVER_ERROR).send({
               message: config.RES.ERROR_DATABASE,
               result: err
@@ -321,37 +314,6 @@ router.put(
           result: err
         });
       });
-
-  }
-);
-
-router.put(
-  '/:id/enabled',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  (req, res) => {
-
-    Product.findByIdAndUpdate(
-      req.params.id,
-      { enabled: req.body.enabled },
-      { new: true },
-      (err, productUpdated) => {
-
-        if (err) {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR_DATABASE,
-            result: err
-          });
-        }
-
-        return res.status(config.STATUS.OK).send({
-          message: config.RES.OK,
-          result: productUpdated
-        });
-
-      }
-    );
 
   }
 );
@@ -388,51 +350,89 @@ router.put(
 );
 
 router.put(
-  '/:id/prices/:indexPrice',
+  '/:id/prices',
   passport.authenticate('jwt', { session: false }),
   hasDashboardRole,
   chooseDB,
   (req, res) => {
 
-    const quantityIsEmpty = validator.isEmpty(req.body.quantity + '');
-    const nameIsEmpty = validator.isEmpty(req.body.name + '');
-    const itemsIsNumeric = validator.isNumeric(req.body.items + '');
-    const priceIsDecimal = validator.isDecimal(req.body.price + '');
+    // Check if all parameters exist
 
-    if ( quantityIsEmpty || nameIsEmpty || !itemsIsNumeric || !priceIsDecimal) {
+    if (!req.body.pricesTmp) {
       return res.status(config.STATUS.BAD_REQUEST).send({
-        message: config.RES.INPUTS_NO_VALID
+        message: config.RES.MISSING_PARAMETER,
+        result: 'array prices'
       });
     }
 
-    let setData = { $set: {} };
-    setData.$set['prices.' + req.params.indexPrice] = {
-      quantity : req.body.quantity,
-      name : req.body.name,
-      items : req.body.items,
-      price : req.body.price
-    };
+    for (let price of req.body.pricesTmp) {
+      if (!price.quantity) {
+        return res.status(config.STATUS.BAD_REQUEST).send({
+          message: config.RES.MISSING_PARAMETER,
+          result: 'quantity'
+        });
+      }
 
-    Product.findByIdAndUpdate(
-      req.params.id,
-      setData,
-      { new: true },
-      (err, productUpdated) => {
-        if (err) {
-          return res.status(config.STATUS.SERVER_ERROR).send({
-            message: config.RES.ERROR_DATABASE,
-            result: err
+      if (!price.name) {
+        return res.status(config.STATUS.BAD_REQUEST).send({
+          message: config.RES.MISSING_PARAMETER,
+          result: 'name'
+        });
+      }
+
+      if (!price.items) {
+        return res.status(config.STATUS.BAD_REQUEST).send({
+          message: config.RES.MISSING_PARAMETER,
+          result: 'items'
+        });
+      }
+
+      if (!price.price) {
+        return res.status(config.STATUS.BAD_REQUEST).send({
+          message: config.RES.MISSING_PARAMETER,
+          result: 'price'
+        });
+      }
+
+    }
+
+    Product.findById(req.params.id)
+      .then(product => {
+
+        if (!product) {
+          return res.status(config.STATUS.OK).send({
+            message: configProducts.RES.NOT_FOUND,
+            result: req.params.id
           });
         }
 
-        return res.status(config.STATUS.OK).send({
-          message: config.RES.OK,
-          result: productUpdated
+        let arrayProductPrices = req.body.pricesTmp;
+        product.prices = [];
+        // Sort prices
+        if (arrayProductPrices.length > 0) {
+          product.prices =  _.sortBy(arrayProductPrices, 'items');
+        }
+
+        return product.save()
+          .then(priceCreated => {
+            return res.status(config.STATUS.OK).send({
+              message: config.RES.UPDATED,
+              result: priceCreated.prices
+            });
+          })
+          .catch(err => {
+            return res.status(config.STATUS.SERVER_ERROR).send({
+              message: config.RES.ERROR_DATABASE,
+              result: String(err)
+            });
+          });
+      })
+      .catch(err => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+          result: String(err)
         });
-
-      }
-    );
-
+      });
   }
 );
 
@@ -455,25 +455,31 @@ router.delete(
     if (sales.length > 0) {
       return res.status(config.STATUS.OK).send({
         message: configProducts.RES.PRODUCT_IN_SALE,
-        result: 'ERROR'
+        result: req.params.id
       });
     }
 
-    Product.findByIdAndRemove(req.params.id, (err, product) => {
+    Product.findByIdAndRemove(req.params.id)
+      .then(product => {
 
-      if (err) {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR_DATABASE,
+        if (!product) {
+          return res.status(config.STATUS.OK).send({
+            message: configProducts.RES.NOT_FOUND,
+            result: req.params.id
+          });
+        }
+
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.DELETED,
           result: product
         });
-      }
-
-      return res.status(config.STATUS.OK).send({
-        message: config.RES.OK,
-        result: product
+      })
+      .catch(err => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+          result: err
+        });
       });
-
-    });
 
   }
 );

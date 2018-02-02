@@ -3,7 +3,6 @@ const config = require('../config/products');
 
 var products_schema = mongoose.Schema({
   category: { type: String, enum: config.CATEGORIES, required: true },
-  enabled: { type: Boolean, default: true, required: true },
   minimumUnit: { type: String, enum: config.MINIMUM_PACKAGES, required: true },
   name: { type: String, unique: true, required: true },
   picture: { type: String },
@@ -15,13 +14,6 @@ var products_schema = mongoose.Schema({
       name: { type: String },
       items: { type: Number },
       price: { type: Number }
-    }
-  ],
-  entries: [
-    {
-      date: { type: Date },
-      quantity: { type: Number },
-      unitCost: { type: Number }
     }
   ]
 }, { usePushEach: true });

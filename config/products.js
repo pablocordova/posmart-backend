@@ -1,7 +1,9 @@
 var config = new Object();
 
 config.RES = {
-  PRODUCT_IN_SALE: 'Error al borrar, producto ya tiene ventas',////
+  PRODUCT_IN_SALE: 'Error al borrar, producto ya tiene ventas',
+  DUPLICATED_PRODUCT_NAME: 'Product name already exist',
+  NOT_FOUND: 'Product not found'
 };
 
 config.MINIMUM_PACKAGES = [
