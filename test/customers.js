@@ -157,10 +157,11 @@ describe('Customer API routes', () => {
         .set(auth)
         .send(customer1)
         .end((err, res) => {
-          customerId = res.body.result._id;
           expect(res).to.have.status(config.STATUS.OK);
           expect(res).to.be.json;
           expect(res.body.message).to.be.equal(config.RES.CREATED);
+          expect(res.body.result).to.exist;
+          customerId = res.body.result._id;
           done();
         });
     });

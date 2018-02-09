@@ -1,39 +1,44 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 
-const app = require('../app');
-const config = require('../config/sales');
-const Customer = require('../models/customer');
-const Sale = require('../models/sale');
-const Product = require('../models/product');
-const User = require('../models/user');
+const server = require('../app');
+const app = server.app;
+
+const config = require('../config/general');
+//const configSales = require('../config/sales');
+
+const databaseTest = process.env.DATABASE_TEST;
+const dbTest = server.db.useDb(databaseTest);
 
 const expect = chai.expect;
 
 chai.use(chaiHttp);
 
 let auth = '';
+let authB = '';
+
 let customerId = '';
 let productId = '';
 let saleId = '';
+
+
+// Constans to initialization
+
+const business = {
+  business: 'Example business test',
+  email: 'example@example.com',
+  password: 'exampleTest123'
+};
 
 const user = {
   'username': 'usernameTester1',
   'email': 'email1@email.com',
   'password': '12K45p78',
-  'type': 'normal',
-  'permissions': '{' +
-    '"customers": true,' +
-    '"products": true,' +
-    '"sales": true,' +
-    '"settings": true,' +
-    '"users": true' +
-  '}'
+  'code': 'postest',
+  'permissionDiscount': 'Permit'
 };
-const userObj = JSON.parse(JSON.stringify(user));
-const loginUser = { 'email': userObj.email, 'password': userObj.password };
 
-const customer = {
+const customer1 = {
   firstname: 'Pablo cesar',
   lastname: 'Cordova morales',
   dni: '06013059',
@@ -41,144 +46,144 @@ const customer = {
   address: 'Jr agusto B. Leguia 233'
 };
 
-const product = {
+let product = {
   category: 'Detergentes',
   minimumUnit: 'Unidad',
   name: 'Magia blanca x360gr',
   picture: 'fake/base64Pic=',
 };
 
+let prices = {
+  pricesTmp: [
+    {
+      quantity: '1',
+      name: 'unidad',
+      items: 1,
+      price: 5.8
+    },
+    {
+      quantity: '12',
+      name: 'docena',
+      items: 12,
+      price: 60
+    }
+  ]
+};
+
 describe('Sale API routes', () => {
 
-  // Clear collections
+  // Clear collections(Drop database)
   before(done => {
+    dbTest.dropDatabase();
+    done();
+  });
 
-    User.remove({}, () => {
-      Sale.remove({}, () => {
-        Customer.remove({}, () => {
-          Product.remove({}, () => {
-            done();
-          });
+  // Initialization
+
+  describe('Create a business', () => {
+
+    it('Create business successfully', done => {
+      chai.request(app)
+        .post('/register')
+        .type('form')
+        .send(business)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
+          expect(res.body.result).to.exist;
+          done();
         });
-      });
     });
 
   });
 
-  describe('Initialize data', () => {
+  describe('Login with business created', () => {
 
-    it('Create one user with normal type', done => {
+    it('Get token to use it to create a user', done => {
+      chai.request(app)
+        .post('/login/business')
+        .type('form')
+        .send(business)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.token).to.exist;
+          expect(res.body._id).to.exist;
+          authB = { 'Authorization': 'JWT ' + res.body.token, 'Content-Type': 'application/json' };
+          done();
+        });
+    });
 
+  });
+
+  describe('Create user who will be logged in.', () => {
+
+    it('Create user for sale app successfully', done => {
       chai.request(app)
         .post('/users')
         .type('form')
+        .set(authB)
         .send(user)
         .end((err, res) => {
-          expect(res).to.have.status(config.STATUS.CREATED);
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
           done();
         });
-
     });
 
-    it('Login and get token necessary for routes', done => {
+  });
 
+  describe('Login with user created', () => {
+
+    it('Get token to use it in next tests', done => {
       chai.request(app)
         .post('/login')
         .type('form')
-        .send(loginUser)
+        .send(user)
         .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res.body.token).to.exist;
           auth = { 'Authorization': 'JWT ' + res.body.token, 'Content-Type': 'application/json' };
           done();
         });
-
     });
 
-    it('Create one customer', done => {
+  });
 
+  describe('Create one customer', () => {
+
+    it('Create one customer', done => {
       chai.request(app)
         .post('/customers')
         .set(auth)
-        .send(customer)
+        .send(customer1)
         .end((err, res) => {
-          customerId = res.body.result._id;
-          expect(res).to.have.status(config.STATUS.CREATED);
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
           expect(res.body.message).to.be.equal(config.RES.CREATED);
+          expect(res.body.result).to.exist;
+          customerId = res.body.result._id;
           done();
         });
-
     });
 
-    it('Create one product', done => {
+  });
+
+  describe('Create product successfully', () => {
+
+    it('Create product successfully', done => {
 
       chai.request(app)
         .post('/products')
-        .set(auth)
+        .set(authB)
         .send(product)
         .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
+          expect(res.body.result).to.exist;
           productId = res.body.result._id;
-          expect(res).to.have.status(config.STATUS.CREATED);
-          expect(res.body.message).to.be.equal(config.RES.CREATED);
-          done();
-        });
-
-    });
-
-    it('Create price product: quantity->1, name->unidad', done => {
-
-      chai.request(app)
-        .post('/products/price')
-        .type('form')
-        .set(auth)
-        .send({
-          quantity: '1',
-          name: 'unidad',
-          items: 1,
-          price: 5.8,
-          product: productId
-        })
-        .end((err, res) => {
-          expect(res).to.be.status(config.STATUS.CREATED);
-          expect(res.body.message).to.be.equal(config.RES.CREATED);
-          done();
-        });
-
-    });
-
-    it('Create price product: quantity->1, name->docena', done => {
-
-      chai.request(app)
-        .post('/products/price')
-        .type('form')
-        .set(auth)
-        .send({
-          quantity: '1',
-          name: 'docena',
-          items: 12,
-          price: 61,
-          product: productId
-        })
-        .end((err, res) => {
-          expect(res).to.be.status(config.STATUS.CREATED);
-          expect(res.body.message).to.be.equal(config.RES.CREATED);
-          done();
-        });
-
-    });
-
-    it('Create entry product: quantity->100, unitCost->12.5', done => {
-
-      chai.request(app)
-        .post('/products/entry')
-        .type('form')
-        .set(auth)
-        .send({
-          quantity: 100,
-          unitCost: 12.5,
-          product: productId
-        })
-        .end((err, resp) => {
-          expect(resp).to.be.status(config.STATUS.CREATED);
-          expect(resp.body.message).to.be.equal(config.RES.CREATED);
           done();
         });
 
@@ -186,40 +191,83 @@ describe('Sale API routes', () => {
 
   });
 
+  describe('Update prices product successfully', () => {
+
+    it('Update prices product successfully', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/prices')
+        .type('form')
+        .set(authB)
+        .send(prices)
+        .end((err, res) => {
+          expect(res).to.be.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.UPDATED);
+          expect(res.body.result).to.exist;
+          // Data come with '_id' parameter, and I use map operation to remove it.
+          const pricesUpdated = res.body.result.map(priceMap => {
+            return {
+              quantity: priceMap.quantity,
+              name: priceMap.name,
+              items: priceMap.items,
+              price: priceMap.price
+            };
+          });
+          expect(pricesUpdated).to.deep.equal(prices.pricesTmp);
+          done();
+        });
+
+    });
+
+  });
+
+
+  // Finish Initialization
+
   describe('POST /sales', () => {
 
-    it('Create one sale', done => {
+    it('Create one sale successfully', done => {
+
+      const productOne = {
+        quantity: 4,
+        unitsInPrice: 12,
+        product: productId,
+        total: 239,
+        unit: 'docena',
+        earning: 1
+      };
+
+      const productTwo = {
+        quantity: 1,
+        unitsInPrice: 1,
+        product: productId,
+        total: 5.5,
+        unit: 'unidad',
+        earning: 1
+      };
+
+      let dataSale = {
+        client: customerId,
+        state: 'Pending',
+        products: [ productOne, productTwo ]
+      };
 
       chai.request(app)
         .post('/sales')
         .set(auth)
-        .send({
-          client: customerId,
-          products: '[' +
-            '{ "quantity": 4, "product": "' +
-            productId +
-            '", "priceIndex": 0}' + ',' +
-            '{ "quantity": 2, "product": "' +
-            productId +
-            '", "priceIndex": 1}' +
-          ']'
-        })
-        .end((err, resS) => {
-          saleId = resS.body.result._id;
-          expect(resS).to.have.status(config.STATUS.CREATED);
-          expect(resS.body.message).to.be.equal(config.RES.CREATED);
-          chai.request(app)
-            .get('/products/' + productId)
-            .set(auth)
-            .end((err, res) => {
-              expect(res).to.have.status(config.STATUS.OK);
-              expect(res.body.result.quantity).to.be.equal(72);
-              done();
-            });
+        .send(dataSale)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.CREATED);
+          expect(res.body.result).to.exist;
+          saleId = res.body.result._id;
+          done();
         });
 
     });
-
+    /*
     it('Fail creating one sale because doesnt have authorization', done => {
 
       chai.request(app)
@@ -287,9 +335,9 @@ describe('Sale API routes', () => {
         });
 
     });
-
+    */
   });
-
+/*
   describe('GET /sales', () => {
 
     it('Get list of sales', done => {
@@ -342,7 +390,7 @@ describe('Sale API routes', () => {
     });
 
   });
-
+*/
 });
 
 

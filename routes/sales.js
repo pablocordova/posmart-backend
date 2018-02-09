@@ -71,7 +71,7 @@ let hasDashboardOrAppRole = (req, res, next) => {
 router.post(
   '/',
   passport.authenticate('jwt', { session: false }),
-  hasDashboardOrAppRole,
+  hasAppRole,
   chooseDB,
   async (req, res) => {
 
@@ -170,48 +170,18 @@ router.post(
     sale.total = _.round(accumulativeTotalPrice, 2);
 
     sale.save()
-      .then((saleCreated) => {
-        return res.status(config.STATUS.CREATED).send({
+      .then(saleCreated => {
+        return res.status(config.STATUS.OK).send({
           message: config.RES.CREATED,
           result: saleCreated
         });
       })
-      .catch((err) => {
+      .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
           message: config.RES.ERROR_DATABASE,
           result: err
         });
       });
-
-  }
-);
-
-/**
- * Only temporary to generate enarnings in each sale
- */
-
-router.post(
-  '/generate/earnings',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  async (req, res) =>
-  {
-    let sales = await Sale.find({});
-
-    for (let sale of sales) {
-      for (let [ index, product ] of sale.products.entries()) {
-        let productQuery = await Product.findById(product.product);
-        sale.products[index]['earning'] = product.total -
-          (product.unitsInPrice * product.quantity * productQuery.unitCost);
-      }
-      // save sale updated
-      sale.save();
-    }
-
-    return res.status(config.STATUS.OK).send({
-      message: config.RES.OK
-    });
 
   }
 );
@@ -769,6 +739,36 @@ router.delete(
         result: sale
       });
 
+    });
+
+  }
+);
+
+/**
+ * Only temporary to generate enarnings in each sale
+ */
+
+router.post(
+  '/generate/earnings',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
+  {
+    let sales = await Sale.find({});
+
+    for (let sale of sales) {
+      for (let [ index, product ] of sale.products.entries()) {
+        let productQuery = await Product.findById(product.product);
+        sale.products[index]['earning'] = product.total -
+          (product.unitsInPrice * product.quantity * productQuery.unitCost);
+      }
+      // save sale updated
+      sale.save();
+    }
+
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK
     });
 
   }
