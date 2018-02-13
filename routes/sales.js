@@ -77,10 +77,30 @@ router.post(
 
     const clientId = req.body.client;
     const state = req.body.state;
-
     let products = req.body.products;
 
-    // --- Validate all parameters  
+    // --- Validate all parameters
+
+    if (!clientId) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'Client Id'
+      });
+    }
+
+    if (!state) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'State'
+      });
+    }
+
+    if (!products) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'Products'
+      });
+    }
 
     // Check if customer exist
     const costumer = await Customer.findById(clientId);
@@ -182,117 +202,6 @@ router.post(
           result: err
         });
       });
-
-  }
-);
-
-router.post(
-  '/search/advanced',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  async (req, res) =>
-  {
-
-    let sales = await Sale.aggregate(
-      {
-        $lookup:
-          {
-            from: 'users',
-            localField: 'seller',
-            foreignField: '_id',
-            as: 'seller'
-          }
-      },
-      {
-        $lookup:
-          {
-            from: 'customers',
-            localField: 'client',
-            foreignField: '_id',
-            as: 'client'
-          }
-      },
-      {
-        $unwind: '$seller'
-      },
-      {
-        $unwind: '$client'
-      },
-      {
-        $project: {
-          _id: 1,
-          total: 1,
-          seller: '$seller.username',
-          state: 1,
-          date: 1,
-          client: '$client.firstname',
-          credits: 1
-        }
-      },
-      {
-        $sort : {
-          date : -1
-        }
-      }
-    );
-
-    // Filter
-
-    if (req.body.id !== '') {
-      sales = await sales.filter(sale => {
-        return String(sale._id).substring(0, 8) === req.body.id;
-      });
-    }
-
-    if (req.body.day !== '') {
-      sales = await sales.filter(sale => {
-        const day = String(moment.utc(sale.date).format('YYYY-MM-DD'));
-        return day === req.body.day;
-      });
-    }
-
-    if (req.body.client !== '') {
-      sales = await sales.filter(sale => {
-        return sale.client.trim().toLowerCase() === req.body.client.trim().toLowerCase();
-      });
-    }
-
-    if (req.body.seller !== '') {
-      sales = await sales.filter(sale => {
-        return sale.seller.trim().toLowerCase() === req.body.seller.trim().toLowerCase();
-      });
-    }
-
-    if (req.body.state !== '' && req.body.state !== 'all') {
-      sales = await sales.filter(sale => {
-        return sale.state === req.body.state;
-      });
-    }
-
-    if (req.body.total !== '') {
-      sales = await sales.filter(sale => {
-        return String(sale.total) === req.body.total;
-      });
-    }
-
-    // Operaction for more details
-
-    for (let [ indexSale, sale ] of sales.entries()) {
-      if (sale.credits) {
-        let sumCredits = 0;
-        for (let credit of sale.credits) {
-          sumCredits += credit.amount;
-        }
-        sales[indexSale]['paidDebt'] = sumCredits;
-        sales[indexSale]['restDebt'] = sale.total - sumCredits;
-      }
-    }
-
-    return res.status(config.STATUS.OK).send({
-      message: config.RES.OK,
-      result: sales
-    });
 
   }
 );
@@ -445,6 +354,117 @@ router.get(
           message: config.RES.ERROR_DATABASE
         });
       });
+
+  }
+);
+
+router.get(
+  '/search/advanced',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
+  {
+
+    let sales = await Sale.aggregate(
+      {
+        $lookup:
+          {
+            from: 'users',
+            localField: 'seller',
+            foreignField: '_id',
+            as: 'seller'
+          }
+      },
+      {
+        $lookup:
+          {
+            from: 'customers',
+            localField: 'client',
+            foreignField: '_id',
+            as: 'client'
+          }
+      },
+      {
+        $unwind: '$seller'
+      },
+      {
+        $unwind: '$client'
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          seller: '$seller.username',
+          state: 1,
+          date: 1,
+          client: '$client.firstname',
+          credits: 1
+        }
+      },
+      {
+        $sort : {
+          date : -1
+        }
+      }
+    );
+
+    // Filter
+
+    if (req.query.id !== '') {
+      sales = await sales.filter(sale => {
+        return String(sale._id).substring(0, 8) === req.query.id;
+      });
+    }
+
+    if (req.query.day !== '') {
+      sales = await sales.filter(sale => {
+        const day = String(moment.utc(sale.date).format('YYYY-MM-DD'));
+        return day === req.query.day;
+      });
+    }
+
+    if (req.query.client !== '') {
+      sales = await sales.filter(sale => {
+        return sale.client.trim().toLowerCase() === req.query.client.trim().toLowerCase();
+      });
+    }
+
+    if (req.query.seller !== '') {
+      sales = await sales.filter(sale => {
+        return sale.seller.trim().toLowerCase() === req.query.seller.trim().toLowerCase();
+      });
+    }
+
+    if (req.query.state !== '' && req.query.state !== 'all') {
+      sales = await sales.filter(sale => {
+        return sale.state === req.query.state;
+      });
+    }
+
+    if (req.query.total !== '') {
+      sales = await sales.filter(sale => {
+        return String(sale.total) === req.query.total;
+      });
+    }
+
+    // Operaction for more details
+
+    for (let [ indexSale, sale ] of sales.entries()) {
+      if (sale.credits) {
+        let sumCredits = 0;
+        for (let credit of sale.credits) {
+          sumCredits += credit.amount;
+        }
+        sales[indexSale]['paidDebt'] = sumCredits;
+        sales[indexSale]['restDebt'] = sale.total - sumCredits;
+      }
+    }
+
+    return res.status(config.STATUS.OK).send({
+      message: config.RES.OK,
+      result: sales
+    });
 
   }
 );

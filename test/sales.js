@@ -70,6 +70,27 @@ let prices = {
   ]
 };
 
+let dataSale = {
+  client: '', // It'll be fill out dynamically, customerId
+  state: 'Pending',
+  products: [
+    {
+      quantity: 4,
+      unitsInPrice: 12,
+      product: '',  // It'll be fill out dynamically, productId
+      total: 239,
+      unit: 'docena'
+    },
+    {
+      quantity: 1,
+      unitsInPrice: 1,
+      product: '',  // It'll be fill out dynamically, productId
+      total: 5.5,
+      unit: 'unidad'
+    }
+  ]
+};
+
 describe('Sale API routes', () => {
 
   // Clear collections(Drop database)
@@ -164,6 +185,7 @@ describe('Sale API routes', () => {
           expect(res.body.message).to.be.equal(config.RES.CREATED);
           expect(res.body.result).to.exist;
           customerId = res.body.result._id;
+          dataSale.client = customerId;
           done();
         });
     });
@@ -184,6 +206,9 @@ describe('Sale API routes', () => {
           expect(res.body.message).to.be.equal(config.RES.CREATED);
           expect(res.body.result).to.exist;
           productId = res.body.result._id;
+          for (let i = 0; i < dataSale.products.length; i++) {
+            dataSale.products[i].product = productId;
+          }
           done();
         });
 
@@ -229,30 +254,6 @@ describe('Sale API routes', () => {
 
     it('Create one sale successfully', done => {
 
-      const productOne = {
-        quantity: 4,
-        unitsInPrice: 12,
-        product: productId,
-        total: 239,
-        unit: 'docena',
-        earning: 1
-      };
-
-      const productTwo = {
-        quantity: 1,
-        unitsInPrice: 1,
-        product: productId,
-        total: 5.5,
-        unit: 'unidad',
-        earning: 1
-      };
-
-      let dataSale = {
-        client: customerId,
-        state: 'Pending',
-        products: [ productOne, productTwo ]
-      };
-
       chai.request(app)
         .post('/sales')
         .set(auth)
@@ -262,27 +263,38 @@ describe('Sale API routes', () => {
           expect(res).to.be.json;
           expect(res.body.message).to.be.equal(config.RES.CREATED);
           expect(res.body.result).to.exist;
+          expect(res.body.result.client).to.be.equal(dataSale.client);
+          expect(res.body.result.state).to.be.equal(dataSale.state);
+
+          const result = res.body.result;
+
+          expect(result.products[0].quantity).to.be.equal(dataSale.products[0].quantity);
+          expect(result.products[0].unitsInPrice).to.be.equal(dataSale.products[0].unitsInPrice);
+          expect(result.products[0].product).to.be.equal(dataSale.products[0].product);
+          expect(result.products[0].total).to.be.equal(dataSale.products[0].total);
+          expect(result.products[0].unit).to.be.equal(dataSale.products[0].unit);
+
+          expect(result.products[1].quantity).to.be.equal(dataSale.products[1].quantity);
+          expect(result.products[1].unitsInPrice).to.be.equal(dataSale.products[1].unitsInPrice);
+          expect(result.products[1].product).to.be.equal(dataSale.products[1].product);
+          expect(result.products[1].total).to.be.equal(dataSale.products[1].total);
+          expect(result.products[1].unit).to.be.equal(dataSale.products[1].unit);
+
+          expect(result.total).to.be.equal(
+            dataSale.products[0].total + dataSale.products[1].total
+          );
+
           saleId = res.body.result._id;
           done();
         });
 
     });
-    /*
-    it('Fail creating one sale because doesnt have authorization', done => {
+
+    it('Failure due to not authorization', done => {
 
       chai.request(app)
         .post('/sales')
-        .send({
-          client: customerId,
-          products: '[' +
-            '{ "quantity": 4, "product": "' +
-            productId +
-            '", "priceIndex": 0}' + ',' +
-            '{ "quantity": 2, "product": "' +
-            productId +
-            '", "priceIndex": 1}' +
-          ']'
-        })
+        .send(dataSale)
         .end((err, res) => {
           expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
           done();
@@ -290,52 +302,67 @@ describe('Sale API routes', () => {
 
     });
 
-    it('Fail creating one sale because duplicated name and price product', done => {
+    it('Failure due to lack client parameter', done => {
+
+      let saleWithoutClient = Object.assign({}, dataSale);
+      saleWithoutClient.client = undefined;
+      saleWithoutClient = JSON.parse(JSON.stringify(saleWithoutClient));
 
       chai.request(app)
         .post('/sales')
+        .type('form')
         .set(auth)
-        .send({
-          client: customerId,
-          products: '[' +
-            '{ "quantity": 4, "product": "' +
-            productId +
-            '", "priceIndex": 0}' + ',' +
-            '{ "quantity": 2, "product": "' +
-            productId +
-            '", "priceIndex": 0}' +
-          ']'
-        })
+        .send(saleWithoutClient)
         .end((err, res) => {
-          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.MISSING_PARAMETER);
+          expect(res.body.result).to.exist;
           done();
         });
-
     });
 
-    it('Fail creating one sale because lack some parameter', done => {
+    it('Failure due to lack state parameter', done => {
+
+      let saleWithoutState = Object.assign({}, dataSale);
+      saleWithoutState.state = undefined;
+      saleWithoutState = JSON.parse(JSON.stringify(saleWithoutState));
 
       chai.request(app)
         .post('/sales')
+        .type('form')
         .set(auth)
-        .send({
-          client: customerId,
-          products: '[' +
-            '{ "product": "' +
-            productId +
-            '", "priceIndex": 0}' + ',' +
-            '{ "quantity": 2, "product": "' +
-            productId +
-            '", "priceIndex": 1}' +
-          ']'
-        })
+        .send(saleWithoutState)
         .end((err, res) => {
-          expect(res).to.have.status(config.STATUS.SERVER_ERROR);
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.MISSING_PARAMETER);
+          expect(res.body.result).to.exist;
           done();
         });
-
     });
-    */
+
+    it('Failure due to lack products parameter', done => {
+
+      let saleWithoutProducts = Object.assign({}, dataSale);
+      saleWithoutProducts.products = undefined;
+      saleWithoutProducts = JSON.parse(JSON.stringify(saleWithoutProducts));
+
+      chai.request(app)
+        .post('/sales')
+        .type('form')
+        .set(auth)
+        .send(saleWithoutProducts)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.MISSING_PARAMETER);
+          expect(res.body.result).to.exist;
+          done();
+        });
+    });
+
+
   });
 /*
   describe('GET /sales', () => {
