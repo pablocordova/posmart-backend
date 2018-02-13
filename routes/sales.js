@@ -207,71 +207,6 @@ router.post(
 );
 
 router.post(
-  '/join/sales',
-  passport.authenticate('jwt', { session: false }),
-  hasDashboardRole,
-  chooseDB,
-  async (req, res) =>
-  {
-
-    let sales = [];
-
-    // Get all sales to join
-    for (let id of req.body.ids) {
-      sales.push(await Sale.findById(id));
-    }
-
-    // Generate new sale, unique information will be of first sale
-    let sale = sales[0];
-    let creditsAccumulative = [];
-    let productsAccumulative = [];
-    let totalAccumulative = 0;
-
-    for (let sale of sales) {
-      // Credits
-      if (sale.credits.length > 0) {
-        for (let credit of sale.credits) {
-          creditsAccumulative.push(credit);
-        }
-      }
-      // Products
-      for (let product of sale.products) {
-        productsAccumulative.push(product);
-      }
-      // Total
-      totalAccumulative += sale.total;
-    }
-
-    sale.credits = creditsAccumulative;
-    sale.date = moment().subtract(5, 'hours');
-    sale.products = productsAccumulative;
-    sale.total = _.round(totalAccumulative, 2);
-    sale.subtotal = _.round(totalAccumulative/(1 + configSales.IGV), 2);
-    sale.igv = _.round(totalAccumulative - sale.subtotal, 2);
-
-    // Remove rest of sales except the first
-    for (var i = 1; i < req.body.ids.length; i++) {
-      await Sale.findByIdAndRemove(req.body.ids[i]);
-    }
-
-    sale.save()
-      .then((saleUpdated) => {
-        return res.status(config.STATUS.OK).send({
-          message: config.RES.OK,
-          result: saleUpdated
-        });
-      })
-      .catch((err) => {
-        return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR_DATABASE,
-          result: err
-        });
-      });
-
-  }
-);
-
-router.post(
   '/:id/credits',
   passport.authenticate('jwt', { session: false }),
   hasDashboardRole,
@@ -279,7 +214,28 @@ router.post(
   async (req, res) =>
   {
 
+    if (!req.body.date) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'date'
+      });
+    }
+
+    if (!req.body.amount) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'amount'
+      });
+    }
+
     let sale = await Sale.findById(req.params.id);
+
+    if (!sale) {
+      return res.status(config.STATUS.OK).send({
+        message: configSales.RES.NOT_FOUND,
+        result: req.params.id
+      });
+    }
 
     let credits = [];
     if (sale.credits) {
@@ -298,7 +254,7 @@ router.post(
     sale.save()
       .then((saleUpdated) => {
         return res.status(config.STATUS.OK).send({
-          message: config.RES.OK,
+          message: config.RES.CREATED,
           result: saleUpdated
         });
       })
@@ -322,13 +278,14 @@ router.get(
     Sale.find({})
       .then(sales => {
         return res.status(config.STATUS.OK).send({
-          result: sales,
-          message: config.RES.OK
+          message: config.RES.OK,
+          result: sales
         });
       })
-      .catch(() => {
+      .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR_DATABASE
+          message: config.RES.ERROR_DATABASE,
+          result: err
         });
       });
 
@@ -344,14 +301,23 @@ router.get(
 
     Sale.findById(req.params.id)
       .then(sale => {
+
+        if (!sale) {
+          return res.status(config.STATUS.OK).send({
+            message: configSales.RES.NOT_FOUND,
+            result: req.params.id
+          });
+        }
+
         return res.status(config.STATUS.OK).send({
-          result: sale,
-          message: config.RES.OK
+          message: config.RES.OK,
+          result: sale
         });
       })
-      .catch(() => {
+      .catch(err => {
         return res.status(config.STATUS.SERVER_ERROR).send({
-          message: config.RES.ERROR_DATABASE
+          message: config.RES.ERROR_DATABASE,
+          result: err
         });
       });
 
@@ -694,6 +660,71 @@ router.put(
 
       }
     );
+
+  }
+);
+
+router.put(
+  '/join',
+  passport.authenticate('jwt', { session: false }),
+  hasDashboardRole,
+  chooseDB,
+  async (req, res) =>
+  {
+
+    let sales = [];
+
+    // Get all sales to join
+    for (let id of req.body.ids) {
+      sales.push(await Sale.findById(id));
+    }
+
+    // Generate new sale, unique information will be of first sale
+    let sale = sales[0];
+    let creditsAccumulative = [];
+    let productsAccumulative = [];
+    let totalAccumulative = 0;
+
+    for (let sale of sales) {
+      // Credits
+      if (sale.credits.length > 0) {
+        for (let credit of sale.credits) {
+          creditsAccumulative.push(credit);
+        }
+      }
+      // Products
+      for (let product of sale.products) {
+        productsAccumulative.push(product);
+      }
+      // Total
+      totalAccumulative += sale.total;
+    }
+
+    sale.credits = creditsAccumulative;
+    sale.date = moment().subtract(5, 'hours');
+    sale.products = productsAccumulative;
+    sale.total = _.round(totalAccumulative, 2);
+    sale.subtotal = _.round(totalAccumulative/(1 + configSales.IGV), 2);
+    sale.igv = _.round(totalAccumulative - sale.subtotal, 2);
+
+    // Remove rest of sales except the first
+    for (var i = 1; i < req.body.ids.length; i++) {
+      await Sale.findByIdAndRemove(req.body.ids[i]);
+    }
+
+    sale.save()
+      .then((saleUpdated) => {
+        return res.status(config.STATUS.OK).send({
+          message: config.RES.UPDATED,
+          result: saleUpdated
+        });
+      })
+      .catch((err) => {
+        return res.status(config.STATUS.SERVER_ERROR).send({
+          message: config.RES.ERROR_DATABASE,
+          result: err
+        });
+      });
 
   }
 );
