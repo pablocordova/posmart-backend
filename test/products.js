@@ -56,6 +56,10 @@ let productUpdated = {
   picture: 'fake/base64Pic=456',
 };
 
+const unitCost = {
+  'unitCost': 5.1
+};
+
 let prices = {
   pricesTmp: [
     {
@@ -534,6 +538,53 @@ describe('Product API routes', () => {
           done();
         });
 
+    });
+
+  });
+
+  describe('PUT /:id/cost', () => {
+
+    it('Update cost product', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/cost')
+        .set(authB)
+        .send(unitCost)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.OK);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.UPDATED);
+          expect(res.body.result.unitCost).to.be.equal(unitCost.unitCost);
+          done();
+        });
+
+    });
+
+    it('Failure due to not authorization', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/cost')
+        .send(unitCost)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.UNAUTHORIZED);
+          done();
+        });
+
+    });
+
+    it('Failure due to lack unitCost parameter', done => {
+
+      chai.request(app)
+        .put('/products/' + productId + '/cost')
+        .type('form')
+        .set(authB)
+        .end((err, res) => {
+          expect(res).to.have.status(config.STATUS.BAD_REQUEST);
+          expect(res).to.be.json;
+          expect(res.body.message).to.be.equal(config.RES.MISSING_PARAMETER);
+          expect(res.body.result).to.exist;
+          done();
+        });
     });
 
   });

@@ -325,6 +325,13 @@ router.put(
   chooseDB,
   (req, res) => {
 
+    if (!req.body.unitCost) {
+      return res.status(config.STATUS.BAD_REQUEST).send({
+        message: config.RES.MISSING_PARAMETER,
+        result: 'unitCost'
+      });
+    }
+
     Product.findByIdAndUpdate(
       req.params.id,
       { unitCost: req.body.unitCost },
@@ -339,7 +346,7 @@ router.put(
         }
 
         return res.status(config.STATUS.OK).send({
-          message: config.RES.OK,
+          message: config.RES.UPDATED,
           result: productUpdated
         });
 
